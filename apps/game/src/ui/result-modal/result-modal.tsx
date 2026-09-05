@@ -1,13 +1,17 @@
 /**
- * Modal de resultado da simulação (MI-10).
+ * Modal de resultado da simulação (MI-10, ajustado na MI-21).
  *
  * Vitória — estrelas nomeadas (SDD §9.E): "Circuito completo", "Rota limpa" e
- * "Lógica mínima"; quando faltam estrelas, explica a que ficou perdida e
- * oferece "Tentar de novo" ao lado de "Próxima fase".
+ * "Lógica mínima"; quando faltam estrelas, explica a que ficou perdida (sem
+ * revelar a solução) e oferece "Tentar de novo" ao lado de "Próxima fase";
+ * selo "resolvida com dica" (SDD §9.C.2) quando a fase foi vencida com ajuda.
  * Erro — diagnóstico em três camadas legíveis (SDD §9.C.1), textos vindos de
- * @circuit/content/text.
+ * @circuit/content/text, sempre com highlight das células que evidenciam o
+ * problema (SDD §4.4 `SimulationIssue.cells`) — nenhum diagnóstico é exibido
+ * sem highlight.
  */
 import {
+  HINT_SEAL_LABEL,
   NEXT_LEVEL_LABEL,
   STARS,
   TRY_AGAIN_LABEL,
@@ -16,16 +20,16 @@ import {
   messageForIssue,
   starLostExplanation,
 } from '@circuit/content/text'
-import type { SimulationIssue, SinkStatus } from '@circuit/core/model'
+import type { Coord, SimulationIssue, SinkStatus } from '@circuit/core/model'
 import { IconStar } from '../icons'
 
 export interface VictoryDetails {
   readonly kind: 'win'
   readonly stars: 1 | 2 | 3
-  readonly usedPieces: number
   readonly usedGates: number
-  readonly pieceLimit: number
   readonly gateLimit: number
+  /** A fase foi vencida usando a dica de nível 2 (SDD §9.C.2). */
+  readonly usedHint?: boolean
 }
 
 export interface FailureDetails {
@@ -47,9 +51,12 @@ export interface ResultModalProps {
   readonly onExit: () => void
 }
 
-/** Explicação da estrela de peças perdida (estilo do catálogo de conteúdo). */
-function lostPiecesExplanation(used: number, limit: number): string {
-  return `Você usou ${used} peças; dá para fazer com ${limit}. Existe uma rota mais limpa escondida aqui.`
+interface Diagnostic {
+  readonly key: string
+  readonly titulo: string
+  readonly explicacao: string
+  readonly acaoSugerida: string
+  readonly cells: readonly Coord[]
 }
 
 /** Um diagnóstico por kind — evita repetir o mesmo texto para o mesmo erro. */
@@ -59,6 +66,62 @@ function dedupeIssues(issues: readonly SimulationIssue[]): readonly SimulationIs
     if (!byKind.has(issue.kind)) byKind.set(issue.kind, issue)
   }
   return [...byKind.values()]
+}
+
+/**
+ * Monta os diagnósticos a exibir: issues da simulação (com suas `cells[]`) ou,
+ * na ausência delas, os destinos insatisfeitos (destacando a célula do sink).
+ * Nunca inclui um diagnóstico sem célula para destacar (SDD §9.C.1/MI-21).
+ */
+function buildDiagnostics(
+  issues: readonly SimulationIssue[],
+  sinks: readonly SinkStatus[],
+): readonly Diagnostic[] {
+  if (issues.length > 0) {
+    return dedupeIssues(issues)
+      .map(issue => {
+        const message = messageForIssue(issue.kind)
+        return {
+          key: issue.kind,
+          titulo: message.titulo,
+          explicacao: message.explicacao,
+          acaoSugerida: message.acaoSugerida,
+          cells: issue.cells,
+        }
+      })
+      .filter(diagnostic => diagnostic.cells.length > 0)
+  }
+
+  return sinks
+    .filter(sink => !sink.satisfied)
+    .map(sink => {
+      const message = formatSinkMismatch(sink.expected, sink.actual)
+      return {
+        key: `${sink.coord.x}-${sink.coord.y}`,
+        titulo: message.titulo,
+        explicacao: message.explicacao,
+        acaoSugerida: message.acaoSugerida,
+        cells: [sink.coord],
+      }
+    })
+    .filter(diagnostic => diagnostic.cells.length > 0)
+}
+
+/** Destaque textual das células apontadas pelo diagnóstico (highlight obrigatório). */
+function CellHighlight({ cells }: { readonly cells: readonly Coord[] }) {
+  return (
+    <ul className="diagnostic__cells" aria-label="Células destacadas no tabuleiro">
+      {cells.map(cell => (
+        <li
+          key={`${cell.x}-${cell.y}`}
+          className="diagnostic__cell"
+          data-testid="diagnostic-cell"
+        >
+          {`Coluna ${cell.x + 1}, linha ${cell.y + 1}`}
+        </li>
+      ))}
+    </ul>
+  )
 }
 
 function VictoryModal({
@@ -77,9 +140,6 @@ function VictoryModal({
   readonly onExit: () => void
 }) {
   const lost: string[] = []
-  if (details.stars < 2) {
-    lost.push(lostPiecesExplanation(details.usedPieces, details.pieceLimit))
-  }
   if (details.stars < 3) {
     lost.push(starLostExplanation(details.usedGates, details.gateLimit))
   }
@@ -95,6 +155,11 @@ function VictoryModal({
         {WIN_TITLE}
       </h2>
       <p className="result-card__subtitle">{levelName}</p>
+      {details.usedHint === true ? (
+        <span className="hint-seal" data-testid="hint-seal">
+          {HINT_SEAL_LABEL}
+        </span>
+      ) : null}
 
       <ul className="result-stars" style="list-style:none;margin:0;padding:0">
         {STARS.map(star => {
@@ -162,7 +227,7 @@ function FailureModal({
   readonly sinks: readonly SinkStatus[]
   readonly onRetry: () => void
 }) {
-  const unsatisfied = sinks.filter(sink => !sink.satisfied)
+  const diagnostics = buildDiagnostics(issues, sinks)
 
   return (
     <div
@@ -177,33 +242,17 @@ function FailureModal({
       <p className="result-card__subtitle">{levelName}</p>
 
       <div className="diagnostics">
-        {issues.length > 0
-          ? dedupeIssues(issues).map(issue => {
-              const message = messageForIssue(issue.kind)
-              return (
-                <div key={issue.kind} className="diagnostic">
-                  <p className="diagnostic__title">{message.titulo}</p>
-                  <p className="diagnostic__body">{message.explicacao}</p>
-                  <p className="diagnostic__action">
-                    <strong>Sugestão: </strong>
-                    {message.acaoSugerida}
-                  </p>
-                </div>
-              )
-            })
-          : unsatisfied.map(sink => {
-              const message = formatSinkMismatch(sink.expected, sink.actual)
-              return (
-                <div key={`${sink.coord.x}-${sink.coord.y}`} className="diagnostic">
-                  <p className="diagnostic__title">{message.titulo}</p>
-                  <p className="diagnostic__body">{message.explicacao}</p>
-                  <p className="diagnostic__action">
-                    <strong>Sugestão: </strong>
-                    {message.acaoSugerida}
-                  </p>
-                </div>
-              )
-            })}
+        {diagnostics.map(diagnostic => (
+          <div key={diagnostic.key} className="diagnostic">
+            <p className="diagnostic__title">{diagnostic.titulo}</p>
+            <p className="diagnostic__body">{diagnostic.explicacao}</p>
+            <CellHighlight cells={diagnostic.cells} />
+            <p className="diagnostic__action">
+              <strong>Sugestão: </strong>
+              {diagnostic.acaoSugerida}
+            </p>
+          </div>
+        ))}
       </div>
 
       <div className="result-actions">
