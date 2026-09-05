@@ -19,7 +19,8 @@ import { IconButton } from '../chrome'
 import { IconBulb, IconPause, IconPlay, IconQuestion, IconRedo, IconTrash, IconUndo } from '../icons'
 import { ToolPalette, type Tool } from '../hud/tool-palette'
 import { PauseOverlay } from '../hud/pause-overlay'
-import { ResultModal, type ResultOutcome } from '../hud/result-modal'
+import { ResultModal, type ResultOutcome } from '../result-modal'
+import { HintBanner, useHintController } from '../hints'
 
 /** Camada de serviços opcionais que o shell recebe de fora (MI-08/09/12/15). */
 export interface GameServices {
@@ -126,26 +127,9 @@ export function GameScreen({
   const paused = useSignal(false)
   const outcome = useSignal<ResultOutcome | null>(null)
   const activeTool = useSignal<Tool>('wire')
-  const hintLevel = useSignal<0 | 1 | 2>(0)
-  const hintUsed = useSignal(false)
-  const failedOnce = useSignal(false)
+  const hint = useHintController(level.hints)
 
-  const { maxPieces, maxGates } = level.starThresholds
-
-  function allowedHintMax(): 1 | 2 {
-    return failedOnce.value ? 2 : 1
-  }
-
-  function pressHint(): void {
-    const current = hintLevel.value
-    const max = allowedHintMax()
-    let next: 0 | 1 | 2
-    if (current === 0) next = 1
-    else if (current >= max) next = 0
-    else next = (current + 1) as 1 | 2
-    hintLevel.value = next
-    if (next > 0) hintUsed.value = true
-  }
+  const { maxGates } = level.starThresholds
 
   function closeOverlays(): void {
     outcome.value = null
@@ -159,7 +143,7 @@ export function GameScreen({
         : simulate(level, board)
 
     if (!result.ok) {
-      failedOnce.value = true
+      hint.notifyFailure()
       outcome.value = {
         kind: 'error',
         issues: result.issues,
@@ -175,23 +159,21 @@ export function GameScreen({
       stars,
       pieces,
       gates,
-      withHint: hintUsed.value,
+      withHint: hint.used,
     })
-    hintLevel.value = 0
+    hint.close()
     outcome.value = {
       kind: 'win',
       stars,
-      usedPieces: pieces,
       usedGates: gates,
-      pieceLimit: maxPieces,
       gateLimit: maxGates,
+      usedHint: hint.used,
     }
   }
 
   const canUndo = services?.canUndo === true
   const canRedo = services?.canRedo === true
   const canClear = services?.canClear === true
-  const hintText = hintLevel.value === 0 ? null : level.hints[hintLevel.value - 1]
 
   return (
     <div className="game">
@@ -215,20 +197,8 @@ export function GameScreen({
           placeholder="Monte o circuito aqui — o tabuleiro entra nesta área."
         />
 
-        {hintText !== null ? (
-          <div className="hint-banner" data-testid="hint-banner">
-            <div className="hint-banner__head">
-              <span>{hintLevel.value === 1 ? 'Dica' : 'Dica extra'}</span>
-              <button
-                type="button"
-                aria-label="Fechar dica"
-                onClick={() => (hintLevel.value = 0)}
-              >
-                ✕
-              </button>
-            </div>
-            <p>{hintText}</p>
-          </div>
+        {hint.text !== null ? (
+          <HintBanner label={hint.bannerLabel} text={hint.text} onClose={hint.close} />
         ) : null}
 
         {paused.value ? (
@@ -275,7 +245,7 @@ export function GameScreen({
           >
             <IconTrash />
           </IconButton>
-          <IconButton label="Dica" onClick={pressHint}>
+          <IconButton label="Dica" onClick={hint.press}>
             <IconBulb />
           </IconButton>
           <IconButton label="Simular circuito" onClick={runSimulation}>
