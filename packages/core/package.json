@@ -3,7 +3,12 @@
   "private": true,
   "version": "0.0.1",
   "type": "module",
+  "types": "./src/model/index.ts",
   "exports": {
-    "./model": "./src/model/index.ts"
+    "./model": "./src/model/index.ts",
+    "./sim": "./src/sim/index.ts",
+    "./state": "./src/state/index.ts",
+    "./gen": "./src/gen/index.ts",
+    "./persist": "./src/persist/index.ts"
   }
 }
