@@ -12,6 +12,13 @@ export default defineConfig({
         },
       },
       {
+        test: {
+          name: 'content',
+          root: './packages/content',
+          environment: 'node',
+        },
+      },
+      {
         plugins: [preact()],
         test: {
           name: 'game',
