@@ -1,2 +1,6 @@
-// Stub reservado para glossário e textos de diagnóstico/dicas (MI-19). Zero conteúdo aqui.
-export {}
+// Textos PT-BR do Circuit Router (glossário, diagnóstico, resultados).
+// Subpath @circuit/content/text — sem dependência de DOM ou Preact.
+
+export * from './glossary'
+export * from './diagnostics'
+export * from './results'
