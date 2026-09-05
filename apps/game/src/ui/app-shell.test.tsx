@@ -2,15 +2,23 @@
  * Teste de integração do shell (MI-10): roteamento por signals entre menu,
  * seleção de fases, tela de jogo e configurações, com voltar funcionando.
  */
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/preact'
 import { AppShell } from './app-shell'
 import { createAppState } from './state'
 import { BOOTSTRAP_CAMPAIGN } from './campaign'
+import { installCanvas2DMock } from '../board/renderer-test-helpers'
 
 const FIRST = BOOTSTRAP_CAMPAIGN[0] as NonNullable<(typeof BOOTSTRAP_CAMPAIGN)[0]>
 
+let restoreCanvas: () => void
+
+beforeEach(() => {
+  restoreCanvas = installCanvas2DMock().restore
+})
+
 afterEach(() => {
+  if (restoreCanvas) restoreCanvas()
   cleanup()
 })
 

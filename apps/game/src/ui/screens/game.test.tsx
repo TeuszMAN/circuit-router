@@ -3,16 +3,25 @@
  * ferramenta, simulação abrindo o modal de diagnóstico e dica em dois níveis
  * (a extra só desbloqueia após uma simulação que falhou — SDD §9.C.2).
  */
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/preact'
 import { GameScreen } from './game'
 import { createAppState } from '../state'
 import { BOOTSTRAP_CAMPAIGN } from '../campaign'
 
+import { installCanvas2DMock } from '../../board/renderer-test-helpers'
+
 const LEVEL = BOOTSTRAP_CAMPAIGN[0] as NonNullable<(typeof BOOTSTRAP_CAMPAIGN)[0]>
 const NEXT_ID = BOOTSTRAP_CAMPAIGN[1]?.id ?? null
 
+let restoreCanvas: () => void
+
+beforeEach(() => {
+  restoreCanvas = installCanvas2DMock().restore
+})
+
 afterEach(() => {
+  if (restoreCanvas) restoreCanvas()
   cleanup()
 })
 
@@ -58,7 +67,7 @@ describe('GameScreen · HUD', () => {
     }
   })
 
-  it('undo/redo/limpar ficam desabilitados sem a composição do editor', () => {
+  it('undo/redo/limpar ficam desabilitados quando o tabuleiro do editor está vazio', () => {
     renderGame()
     for (const label of ['Desfazer', 'Refazer', 'Limpar tabuleiro']) {
       const button = screen.getByRole('button', { name: label }) as HTMLButtonElement

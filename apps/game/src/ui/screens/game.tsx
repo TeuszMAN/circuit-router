@@ -20,6 +20,7 @@ import { IconBulb, IconPause, IconPlay, IconQuestion, IconRedo, IconTrash, IconU
 import { ToolPalette, type Tool } from '../hud/tool-palette'
 import { PauseOverlay } from '../hud/pause-overlay'
 import { ResultModal, type ResultOutcome } from '../result-modal'
+import { useGameComposition } from '../../app/composition'
 import { HintBanner, useHintController } from '../hints'
 
 /** Camada de serviços opcionais que o shell recebe de fora (MI-08/09/12/15). */
@@ -119,7 +120,7 @@ export function GameScreen({
   level,
   state,
   nextLevelId,
-  services,
+  services: externalServices,
   onOpenNext,
   onExit,
   onHome,
@@ -128,6 +129,9 @@ export function GameScreen({
   const outcome = useSignal<ResultOutcome | null>(null)
   const activeTool = useSignal<Tool>('wire')
   const hint = useHintController(level.hints)
+
+  const composedServices = useGameComposition(level, activeTool, state)
+  const services = externalServices ?? composedServices
 
   const { maxGates } = level.starThresholds
 

@@ -3,7 +3,7 @@
  * de jogo sem perder o estado do tabuleiro, seleção de linha da tabela e
  * navegação ao glossário completo.
  */
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/preact'
 import { glossaryEntry } from '@circuit/content/text'
 import { AppShell } from '../app-shell'
@@ -12,10 +12,18 @@ import { BOOTSTRAP_CAMPAIGN } from '../campaign'
 import { ConceptPanel } from './concept-panel'
 import { closeConcept, navigateToTerm, openConcept } from './panel-state'
 import { recordGateObservation, resetObservedRows } from './observed'
+import { installCanvas2DMock } from '../../board/renderer-test-helpers'
 
 const FIRST = BOOTSTRAP_CAMPAIGN[0] as NonNullable<(typeof BOOTSTRAP_CAMPAIGN)[0]>
 
+let restoreCanvas: () => void
+
+beforeEach(() => {
+  restoreCanvas = installCanvas2DMock().restore
+})
+
 afterEach(() => {
+  if (restoreCanvas) restoreCanvas()
   cleanup()
   closeConcept()
   resetObservedRows()
