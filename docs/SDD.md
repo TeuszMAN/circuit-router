@@ -1,39 +1,211 @@
 # SDD v2 — Circuit Router
 
 > Aceito em 2026-09-05 pelo PO. Decisões técnicas: [ADR-0001](adr/0001-fundacao-tecnica.md).
-> Este documento é o esqueleto aprovado; o detalhamento completo acontece na MI-14.
-> A seção de currículo educacional (aprender Eng. de Computação) é incorporada em etapa dedicada (Fase A.5).
+> Documento final publicado na MI-14, descrevendo o sistema **como implementado** (algoritmo de nets do §4, contrato do §3, comandos do §6, persistência do §10, áudio do §11, PWA do §12).
+> A seção de currículo educacional (9.A–9.E, Fase A.5) é incorporada ao §9 e detalhada no fim deste documento.
 
 
-**1. Visão do produto** — 1.1 Pitch e fantasia (roteador de sinais); 1.2 Público e plataforma-alvo (mobile web, PWA instalável); 1.3 Loop de jogo (observar → rotear → simular → otimizar por estrelas); 1.4 Escopo do v1 e não-objetivos explícitos (sem backend, sem multiplayer, sem contas).
+**1. Visão do produto**
 
-**2. Arquitetura** — 2.1 Diagrama de camadas: `content` → `core` → `app` (UI); 2.2 Regra de dependência unidirecional (core nunca importa DOM, UI nunca reimplementa lógica); 2.3 Monorepo e workspaces; 2.4 Subpath exports do core e por que não há barrel; 2.5 Build e ambientes (dev / preview / build PWA).
+**1.1 Pitch e fantasia.** O jogador é um *roteador de sinais*: fontes fixas emitem 0/1 e ele desenha fios e posiciona portas lógicas até cada destino (sink) receber exatamente o valor que espera. A fantasia é de engenharia — construir um circuito que funciona — e cada erro vira um diagnóstico legível (curto, ciclo, flutuante), não uma punição.
 
-**3. Modelo de domínio** — 3.1 `Coord`, `Direction`, `Signal = 0 | 1 | undefined`; 3.2 Tipos de célula (`Empty`, `Source`, `Sink`, `Wire`, `Gate`); 3.3 Portas: aridade, lados de entrada **declarados explicitamente** (fim da regra "todos os lados menos a saída"), rotação; 3.4 `LevelSpec` (grid, células fixas, inventário de peças, alvos de estrela, dicas) — schema versionado; 3.5 `BoardState` (camada editável pelo jogador, separada da imutável do nível); 3.6 Serialização e regras de compatibilidade.
+**1.2 Público e plataforma-alvo.** Quem quer aprender Engenharia de Computação jogando, em telas de 360–430px. Mobile web como caso primário; PWA instalável (MI-11) garante funcionamento offline no celular. Mouse/teclado são secundários, nunca o contrário.
 
-**4. Simulação** — 4.1 Construção de *nets* por union-find sobre fios adjacentes; 4.2 Grafo de drivers/leitores por net; 4.3 Ordenação topológica e avaliação; 4.4 **Diagnósticos como dados, não exceções**: `{ ok, sinks[], issues: [{ kind: 'short'|'cycle'|'floating'|'unpowered-gate', cells[] }] }`; 4.5 Distinção formal entre curto (dois drivers conflitantes na mesma net) e ciclo combinacional (SCC no grafo de portas); 4.6 Complexidade alvo O(células + arestas) e orçamento por frame; 4.7 Traço de propagação em passos, consumido pela animação.
+**1.3 Loop de jogo.** Observar o nível (fontes, destinos, inventário) → rotear fios e portas → simular → ler o diagnóstico se falhar → otimizar para as 3 estrelas. O ciclo ensina por descoberta: primeiro fazer funcionar, depois fazer com menos.
 
-**5. Condição de vitória e pontuação** — 5.1 Satisfação de todos os sinks; 5.2 Três estrelas: resolver / abaixo do limite de peças / abaixo do limite de portas; 5.3 Persistência do melhor resultado por fase.
+**1.4 Escopo do v1 e não-objetivos.** Sem backend, sem contas, sem leaderboard global, sem multiplayer. Jogo 100% client-side (ADR-0001): a persistência vive em `localStorage` com envelope versionado, pronta para virar um adaptador de sync remoto no futuro sem reescrita.
 
-**6. Estado do jogador e comandos** — 6.1 Padrão Command (`PlaceWire`, `PlaceGate`, `Rotate`, `Erase`, `DragPath`, `Clear`); 6.2 Pilhas de undo/redo e coalescência de um traço inteiro em um comando; 6.3 Invariantes (nunca sobrescrever célula fixa do nível).
+---
 
-**7. Interface e interação (touch-first)** — 7.1 Layout responsivo (tabuleiro maximizado, HUD em barras seguras com `safe-area-inset`); 7.2 Pointer Events unificados, `touch-action: none`, alvos ≥44px; 7.3 Drag-to-connect: traço contínuo com quantização e correção de diagonais; 7.4 Pinch-zoom e pan com clamp; 7.5 Rotação de porta por toque na peça selecionada; 7.6 Undo/redo, hint e limpar no HUD; 7.7 Feedback: highlight de erro, tooltip de diagnóstico, haptics (`navigator.vibrate`) opcional.
+**2. Arquitetura**
 
-**8. Renderização** — 8.1 Canvas 2D único, `devicePixelRatio`, resize observer; 8.2 Camadas lógicas (fundo/grade, células fixas, peças do jogador, sinal animado, overlay de seleção); 8.3 Render sob demanda (dirty flag) vs `requestAnimationFrame` durante animação; 8.4 Animação de propagação a partir do traço da simulação; 8.5 Tokens de tema (paleta, glow de sinal 0/1, estados de erro) e `prefers-reduced-motion`.
+**2.1 Diagrama de camadas.** `content` (fases/textos) → `core` (modelo, simulação, estado, gerador, persistência) → `app` (UI Preact + Canvas). O `core` é headless: roda e é testado em Node, não importa DOM nem Preact. A UI consome o core **apenas pelos tipos e funções exportados**; nunca reimplementa lógica.
 
-**9. Conteúdo e progressão** — 9.1 Formato `LevelSpec` em JSON e organização em packs; 9.2 Currículo da campanha: tutorial implícito → NOT → OR → AND → composição → curto/roteamento → otimização; 9.3 Fases handmade vs geradas; 9.4 Gerador procedural: sorteio de alvo, síntese de circuito de referência, poda, **validação obrigatória pelo solver** e estimativa de dificuldade; 9.5 Modo sandbox e editor de fases (export/import de JSON).
+**2.2 Regra de dependência unidirecional.** `core` não conhece `content` nem `app`; `content` depende apenas dos tipos de `core`; `app` depende de ambos. Violação de fronteira é erro de arquitetura (verificado por typecheck e por revisão de fronteira por tarefa).
 
-**10. Persistência** — 10.1 Envelope versionado em `localStorage`; 10.2 Conteúdo (progresso, estrelas, config, mute, tema, rascunhos do sandbox); 10.3 Migrações e recuperação de save corrompido; 10.4 Ponto de extensão para sync remoto (interface de repositório, sem implementação no v1).
+**2.3 Monorepo e workspaces.** npm workspaces nativos: `packages/core` (`@circuit/core`), `packages/content` (`@circuit/content`), `apps/game` (`@circuit/game`). Raiz expõe os scripts `dev`, `build`, `preview`, `test` (Vitest) e `typecheck` (tsc --noEmit nos três projetos). `tsconfig.base.json` em modo strict.
 
-**11. Áudio** — 11.1 WebAudio com desbloqueio no primeiro gesto; 11.2 SFX curtos sintetizados (colocar, apagar, sucesso, erro); 11.3 Música ambiente opcional; 11.4 Mute persistido e respeito à sessão silenciosa.
+**2.4 Subpath exports.** `@circuit/core` expõe `./model`, `./sim`, `./state`, `./gen`, `./persist`; `@circuit/content` expõe `.` (schema), `./packs` e `./text`. Cada subpath aponta para seu `src/*/index.ts`. **Não há barrel único** — decisão deliberada (ADR-0001) para eliminar o ponto de conflito de merge entre agentes paralelos.
 
-**12. PWA e distribuição** — 12.1 Manifest e ícones; 12.2 Estratégia de service worker e atualização; 12.3 Garantias offline; 12.4 Fontes e assets auto-hospedados.
+**2.5 Build e ambientes.** Vite dev server para desenvolvimento (SW desligado), `vite build` com `vite-plugin-pwa` para produção, `vite preview` para validar o build offline. Versões atuais: TypeScript ^7, Vite ^8, Vitest ^5, jsdom ^29, Preact ^10 + `@preact/signals`, `vite-plugin-pwa` ^1.3.
 
-**13. Estratégia de testes** — 13.1 Vitest e workspace; 13.2 Unitários do core (tabelas-verdade, nets, curto, ciclo, flutuante); 13.3 Property-based no gerador (toda fase gerada tem solução); 13.4 Round-trip de serialização e migração de save; 13.5 Testes de comandos/undo; 13.6 Testes de componentes do HUD em jsdom; 13.7 Fumaça: toda fase de `content` é resolvível pelo solver.
+---
 
-**14. Qualidade e convenções** — 14.1 TS strict, sem `any` no core; 14.2 Fronteiras de arquivo por área e um commit por tarefa; 14.3 Conventional Commits em PT-BR; 14.4 Orçamentos de bundle e de tempo de simulação.
+**3. Modelo de domínio**
 
-**15. Roadmap pós-v1** — leaderboard e save na nuvem (exigiria backend e nova ADR), portas XOR/NAND, componentes multi-célula, sinais multi-bit, fases da comunidade.
+**3.1 Geometria e sinal.** `Coord { x, y }`; `Direction = 'N' | 'S' | 'E' | 'W'`; `Signal = 0 | 1 | undefined` — o valor lógico de um fio ou saída, com `undefined` significando "sem valor definido" (flutuante/indeterminado), distinto de 0.
+
+**3.2 Células.** `CellKind = 'empty' | 'source' | 'sink' | 'wire' | 'gate'`. Cada célula declara **quais lados são ativos** (podem formar conexão) — a conexão entre vizinhas só existe quando os lados são complementares (N↔S, E↔W):
+- `SourceCell`: produz sinal fixo 0/1 pelo `outputSide`.
+- `SinkCell`: espera valor `expected` pelo `inputSide`.
+- `WireCell`: transporta sinal; `sides` = lados ativos (fio reto, curva, junção em T/+).
+- `GateCell`: porta com `inputSides` **declarados explicitamente** + `outputSide`, ambos já refletindo a rotação.
+- `EmptyCell`: célula vazia editável (vira fio/porta) — nunca entra na simulação.
+
+**3.3 Portas.** `GateType = 'AND' | 'OR' | 'NOT'` no v1 (XOR é *construído* com AND/OR/NOT — é conteúdo do Pack 6, não peça). `GATE_ARITY` valida `inputSides` por tipo: NOT tem 1 entrada (oposta à saída); AND/OR têm 2 (a oposta e a vizinha no sentido horário) — regra `inputSidesFor(gate, outputSide)` do core, que autores de fase podem sobrescrever declarando `inputSides` no `LevelSpec`. Rotação é horária (N→E→S→W) via `rotateCw`.
+
+**3.4 `LevelSpec`** — especificação imutável e serializável de uma fase: `schemaVersion` (= `LEVEL_SCHEMA_VERSION` 1), `id`, `name`, `grid {width, height}`, `fixedCells` (células fixas ancoradas), `inventory {wires: number|null, gates: Partial<Record<GateType, number|null>>}` (`null` = sem limite), `hints` (tupla [nível 1, nível 2]), `starThresholds {maxPieces, maxGates}` e `expression?` (expressão booleana-alvo para exibição opcional na UI).
+
+**3.5 `BoardState`** — camada editável pelo jogador, separada das células fixas do nível: `{ levelId, placedCells[] }`, onde `PlacedCell` só contém `WireCell | GateCell`. Fontes/sinks/paredes vêm de `fixedCells` e nunca aparecem aqui. Comandos de edição produzem **novas instâncias** (imutabilidade); nada muta o `LevelSpec`.
+
+**3.6 Serialização e compatibilidade.** Fases trafegam como JSON conforme o schema versionado acima; `LevelSpec` e `SaveData` carregam `schemaVersion` e bump exige migração (ver §10). Round-trip save preserva tudo; JSON malformado ou versão futura → save padrão, sem throw.
+
+---
+
+**4. Simulação (motor por nets)**
+
+Implementação real em `packages/core/src/sim/engine.ts` — **é o algoritmo que o v1 do SDD descrevia errado e que esta v2 documenta como implementado**.
+
+**4.1 Construção de nets por union-find.** Fios adjacentes com lados ativos complementares são agrupados em *nets* (union-find): uma net é um **único nó elétrico** — todos os seus fios têm o mesmo valor. Uma junção em T/+ de fios é uma net só; isso é o que torna fan-out possível e curto detectável.
+
+**4.2 Grafo de drivers/leitores.** Para cada net, o motor identifica *drivers* (fonte ou saída de porta conectada à net) e *leitores* (entrada de porta ou sink). Invariante elétrico: **uma net precisa de exatamente um driver**.
+
+**4.3 Avaliação determinística.** O grafo de dependências entre portas (entrada depende da net que a alimenta) é avaliado em **ordem topológica**; portas cujas entradas dependem de saídas ainda não resolvidas esperam sua vez. `evaluateGate(gate, inputs)` implementa as tabelas-verdade de NOT/AND/OR sobre `Signal` (entrada `undefined` ⇒ saída indefinida). Execuções repetidas produzem resultado idêntico.
+
+**4.4 Diagnósticos como dados, nunca exceções.** `simulate(level, board, {trace?})` retorna `SimulationResult { ok, sinks[], issues[] }`; `sinks[]` traz `SinkStatus { coord, expected, actual, satisfied }` por destino, e `issues[]` traz `{ kind, cells[] }` com as células que evidenciam o problema. A UI traduz cada `kind` em texto de aprendiz (§9.C.1). Condição de jogo nunca lança.
+
+**4.5 Distinção formal curto vs ciclo** (correção sobre o protótipo): dois drivers com valores conflitantes na mesma net ⇒ `short`; realimentação combinacional (dependência cíclica entre portas, SCC no grafo) ⇒ `cycle` — **nunca** confundidos. Coberto por testes dedicados (NOT realimentado ⇒ `cycle`, não `short`).
+
+**4.6 Demais diagnósticos.** Net sem driver alimentando leitores ⇒ `floating`; porta com entrada(s) em falta (não conectada, flutuante ou em net com curto) ⇒ `unpowered-gate`. `ok` só é verdadeiro com todos os sinks satisfeitos e zero issues.
+
+**4.7 Traço de propagação.** `simulateWithTrace` devolve, além do resultado, `trace: SimTraceStep[]` — células que receberam sinal a cada passo — consumido pela animação de propagação do renderizador (§8.4). Sem `trace: true` o traço é vazio (zero overhead).
+
+---
+
+**5. Condição de vitória e pontuação**
+
+**5.1 Vitória.** Todos os sinks satisfeitos e nenhum issue ⇒ `ok`. O jogador vence no momento em que simula um circuito `ok`.
+
+**5.2 Três estrelas** (SDD §9.E nomeia cada uma na UI): ★1 **Circuito completo** = resolver; ★2 **Rota limpa** = resolver com ≤ `starThresholds.maxPieces` peças; ★3 **Lógica mínima** = resolver com ≤ `starThresholds.maxGates` portas. Não existe estrela por rapidez — velocidade não é aprendizado.
+
+**5.3 Persistência do melhor resultado.** Para cada fase guarda-se o melhor alcançado (`LevelProgress { stars, bestPieces?, bestGates?, completedWithHint? }`); refazer melhora o registro sem nunca piorá-lo. Limites de estrela são sempre **derivados do solver** (prova de atingibilidade), nunca estimados no olho.
+
+---
+
+**6. Estado do jogador e comandos**
+
+**6.1 Padrão Command sobre `BoardState`.** `LevelEditor` (em `packages/core/src/state/`) expõe as operações `placeWire`, `placeGate`, `rotateGate`, `erase`, `dragWires`, `clear`, além de `undo`/`redo`. Estado imutável: cada transição produz um novo `BoardState`.
+
+**6.2 Undo/redo.** Pilhas de estados com limite configurável. **Um traço inteiro de arrasto é coalescido em UM único passo de undo** (`dragWires(path)`), mesmo com dezenas de células — o jogador desfaz o gesto, não a célula. Nova edição limpa a pilha de redo.
+
+**6.3 Invariante.** Nenhum comando sobrescreve célula fixa do nível (`isFixed`); comando sobre célula fixa é rejeitado sem alterar estado. Property test: 200 comandos aleatórios + 200 undos voltam ao estado inicial.
+
+---
+
+**7. Interface e interação (touch-first)**
+
+**7.1 Contratos.** `app/contracts.ts` define as interfaces que a UI consome — `BoardRenderer` (mount/unmount/resize/render/cellAt sobre um `RenderFrame { level, board, issues, selected }`), `InputController` (attach/detach/onCommand/setZoom) e `AudioBus`. A UI **não instancia nem conhece** as implementações concretas; a composição é do ponto de integração (MI-15).
+
+**7.2 Comandos de entrada.** `InputController` emite `InputCommand`: `drag-path`, `place-gate`, `rotate`, `erase`, `clear-board`, `undo`, `redo` — a entrada nunca muta estado diretamente; o ponto de composição traduz comandos em chamadas do `LevelEditor`.
+
+**7.3 Layout.** Tabuleiro maximizado com HUD em barras seguras (`safe-area-inset-*`); alvos de toque ≥ 44px; usável em 360×640 sem scroll horizontal.
+
+**7.4 Gestos (MI-09).** Pointer Events unificados (dedo/caneta/mouse), `touch-action: none`, captura de ponteiro; drag-to-connect com traço contínuo quantizado para células e **correção de diagonais** (arrasto rápido em diagonal vira caminho ortogonal sem buracos); pinch-zoom e pan com clamp; toque na peça selecionada rotaciona. Nenhum handler de `mouseenter`.
+
+**7.5 Feedback.** Highlight das células do diagnóstico no tabuleiro, haptics opcional (`navigator.vibrate`, respeitando a config), e textos de erro em PT-BR vindos de `@circuit/content/text` — nenhum texto pedagógico hardcoded na UI.
+
+---
+
+**8. Renderização**
+
+**8.1 Canvas 2D único** (`CanvasBoardRenderer implements BoardRenderer`), DPR-aware (nítido em 1x/2x/3x), resize observer. HUD/menus/modais ficam em DOM/Preact; **o Canvas desenha, o DOM não sabe de células** (ADR-0001).
+
+**8.2 Camadas lógicas.** Grade/fundo, células fixas, peças do jogador, sinal animado, overlay de seleção/erro — desenhadas na ordem certa a cada frame.
+
+**8.3 Render sob demanda.** Dirty flag para edições; `requestAnimationFrame` apenas durante animação. Grid 20×14 anima a 60fps em perfil mobile.
+
+**8.4 Animação de propagação.** `buildSignalTimeline(trace)` converte o traço da simulação (§4.7) em `SignalTimeline`; `pulseIntensity`/`signalTotalMs` conduzem o pulso de sinal pelas células. **`prefers-reduced-motion` corta a animação para um corte seco.**
+
+**8.5 Tema.** `BoardTheme` com tokens (paleta, `SignalColors` para 0/1, `IssuePalette` por diagnóstico), `withTheme()` para sobrescrever e `valueColor()` para a cor do sinal — consumidos pelos painters. O renderizador não conhece Preact.
+
+---
+
+**9. Conteúdo e progressão**
+
+**9.1 Formato e packs.** Fases em JSON conforme o `LevelSpec` versionado (§3.4), organizadas em packs por tema em `packages/content/src/packs/` com índice `index.ts`. **9.2 Currículo e progressão didática, 9.A–9.E** (pilares pedagógicos, packs, feedback, glossário, estrelas nomeadas): seção completa e aprovada no fim deste documento — é a especificação consumida por MI-07/MI-17/MI-18 (fases) e MI-19/MI-20/MI-21 (textos, painel de conceito, dicas).
+
+**9.3 Handmade vs gerada.** Campanha principal é handmade com curadoria didática (uma mecânica nova por pack); o gerador produz fases de treino/sandbox ilimitadas com dificuldade parametrizada.
+
+**9.4 Gerador procedural e solver** (`packages/core/src/gen/`, MI-05). Fluxo de `generateLevel({ seed, difficulty })` (dificuldade 1..5):
+1. **Sorteio do alvo** com orçamento exato de portas (`sampleTarget`, expressões sobre ≤ 3 variáveis);
+2. **Síntese** do circuito de referência e posicionamento no grid com poda por paredes (`buildCandidate`/`buildLevelSpec`; configs `DIFFICULTY_CONFIGS[1..5]`);
+3. **Validação obrigatória pelo solver**: a fase só sai "pronta" se `solveLevel` provar solução dentro do inventário — o gerador lança (bug interno) se produzir fase insolúvel;
+4. **Estimativa de dificuldade** (`estimateDifficulty` → `gates`, `depth`, `wireLength`, `score`) derivada do circuito, não do olho.
+Determinismo: toda a cadeia é dirigida por PRNG semeado (`Rng` + `mixSeed`) — mesma seed ⇒ fase byte-idêntica (testado). O solver (`solveLevel` → `SolveResult { solved, board?, wiresUsed?, reason? }`) resolve por decomposição em regiões livres com um driver por região (BFS determinística) e valida o resultado no motor de simulação; limitações assumidas do v1: regiões com 2+ drivers (`topology-unsupported`) e portas a colocar pelo jogador ficam fora do escopo do solver — fases geradas nunca produzem esses casos.
+
+**9.5 Sandbox e editor (MI-13).** Modo livre com grid configurável, colocação de sources/sinks, teste imediato e editor que exporta/importa `LevelSpec` em JSON validado contra o schema; rascunhos persistem via `SaveStore.sandboxDrafts`.
+
+---
+
+**10. Persistência**
+
+**10.1 Envelope versionado.** `SaveStore` (em `packages/core/src/persist/`) grava `SaveData { schemaVersion: SAVE_SCHEMA_VERSION, levels, settings, sandboxDrafts }` sobre uma interface `StorageLike` (`localStorage` no app; memória nos testes). `DEFAULT_SETTINGS` = `{ muted: false, theme: 'auto', haptics: true, reducedMotion: false }`.
+
+**10.2 Conteúdo.** `levels: Record<levelId, LevelProgress>` (estrelas + melhores contagens + `completedWithHint`); `settings` (mute, tema, haptics, reduzir animação); `sandboxDrafts: Record<slot, { label, updatedAt, levelSpec, boardState }>`.
+
+**10.3 Migrações e recuperação.** Pipeline de migração por `schemaVersion` (v1 atual); JSON corrompido, ausente ou de versão desconhecida ⇒ save padrão, **sem throw**. API do store: `levelProgress`, `recordLevelResult`, `updateSettings`, `draft`/`saveDraft`/`deleteDraft`, `reset`.
+
+**10.4 Extensibilidade.** O storage fica atrás de interface (`StorageLike`) — sync remoto futuro é um adaptador novo, não uma reescrita (ADR-0001).
+
+---
+
+**11. Áudio**
+
+**11.1 WebAudio com desbloqueio por gesto.** `WebAudioBus implements AudioBus` (`apps/game/src/audio/`): o `AudioContext` **só é criado no primeiro `unlock()`**, chamado a partir de um gesto do usuário — zero warning de autoplay, nada toca antes de interação.
+
+**11.2 SFX sintetizados.** place/erase/rotate/success/error gerados por oscilador+envelope (sem arquivos pesados).
+
+**11.3 Música ambiente.** Pad de acordes com scheduler; `setMusicEnabled` liga/desliga; fade no bus próprio.
+
+**11.4 Mute e sessão.** `setMuted`/`isMuted` silenciam tudo via gain mestre; o mute **persiste entre recargas** porque o bus recebe `initialMuted` (ex.: `save.settings.muted` do SaveStore) e notifica mudanças por `onMutedChange` — o áudio não conhece persistência (fronteira; a ligação é da integração MI-15). `suspend()`/`resume()` seguram o contexto quando a aba fica oculta (`visibilitychange`) e retomam ao voltar.
+
+---
+
+**12. PWA e distribuição**
+
+**12.1 Manifest e ícones.** `vite-plugin-pwa` com `registerType: 'autoUpdate'`; manifest com `name`/`short_name` **Circuit Router**, `start_url: '/'`, `display: 'standalone'`, `theme_color`/`background_color` e ícones 192/512 + maskable em `apps/game/public/icons`. `<meta name="viewport" content="...viewport-fit=cover">` e `env(safe-area-inset-*)` no CSS.
+
+**12.2 Service worker.** `generateSW` com precache do bundle e `navigateFallback: '/index.html'`; novo SW assume com recarga automática (autoUpdate). SW desligado em dev.
+
+**12.3 Offline.** Segunda visita funciona com a rede desligada — bundle, fontes e assets precacheados; fases JSON de `content` entram no precache quando existirem (campanha).
+
+**12.4 Fontes auto-hospedadas.** Inter Variable (OFL) em `apps/game/public/fonts/` (subsets latin + latin-ext, cobrem pt-BR), injetada via `transformIndexHtml` — **sem CDN externo**, zero requisição a domínio externo em runtime.
+
+---
+
+**13. Estratégia de testes**
+
+**13.1 Vitest com workspace**: `packages/core` e `packages/content` em `environment: 'node'`; `apps/game` em `'jsdom'` (`vitest.workspace.ts`). Mesmo resolver do build — impossível divergir do que o navegador executa.
+
+**13.2 Core.** Tabelas-verdade de AND/OR/NOT; nets/curto/ciclo/flutuante/unpowered-gate com células corretas; determinismo; comandos/undo com property test.
+
+**13.3 Gerador.** Mesma seed ⇒ fase byte-idêntica; 500 fases geradas 100% validadas pelo solver; dificuldade estimada monótona com o parâmetro; geração < 50ms.
+
+**13.4 Persistência.** Round-trip salvar/carregar; migração de versões anteriores; save corrompido ⇒ padrão sem throw; storage em memória.
+
+**13.5 UI (jsdom).** Componentes (seleção de fases, modais, settings, app-shell), áudio com `AudioContext` mockado, renderer Canvas com conversão célula↔pixel e DPR, animação de sinal, quantização de entrada.
+
+**13.6 Fumaça.** Toda fase de `content` é resolvível pelo solver (roda sobre a campanha quando existir).
+
+Estado na noite de 2026-09-05: **652 testes verdes em 19 arquivos** (11/21 tarefas concluídas; ver `docs/SDD` roadmap e board da operação).
+
+---
+
+**14. Qualidade e convenções**
+
+**14.1 TS strict, sem `any` no core.** Typecheck roda sobre os três projetos no gate (`npm run typecheck`).
+
+**14.2 Fronteiras de arquivo por área.** Cada tarefa do board declara sua fronteira (ex.: `packages/core/src/sim/**`, `apps/game/src/board/**`); implementadores só editam os caminhos listados — é o que viabiliza agentes em paralelo com merges triviais.
+
+**14.3 Um commit por tarefa**, mensagens Conventional Commits em PT-BR, sem trailers (proibido `Co-Authored-By`/assinaturas); autor = identidade git local.
+
+**14.4 Orçamentos.** Bundle enxuto (Preact ~5KB gzip, sem React); simulação O(células + arestas) com orçamento por frame; suíte completa roda em segundos.
+
+---
+
+**15. Roadmap pós-v1**
+
+Leaderboard e save na nuvem (exigiriam backend + nova ADR — hoje o storage já é um adaptador); portas XOR/NAND como peças; componentes multi-célula; sinais multi-bit; temporização/atraso real; fases da comunidade; acessibilidade do tabuleiro por teclado + `aria-live` (mitigação já prevista no ADR-0001).
 
 ---
 
