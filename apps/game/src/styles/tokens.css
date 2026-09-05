@@ -1,7 +1,7 @@
 /*
  * Circuit Router — design tokens (CSS custom properties).
  * Paleta clara (padrão) e escura via [data-theme='dark'] no <html>.
- * Sem fonte externa: pilha de sistema (MI-11 troca por fontes auto-hospedadas).
+ * Sem CDN: fonte Inter Variable auto-hospedada em /fonts (MI-11).
  */
 :root {
   color-scheme: light;
@@ -16,8 +16,8 @@
   --tap: 44px;
 
   --font-ui:
-    system-ui, -apple-system, 'Segoe UI', Roboto, Ubuntu, Cantarell,
-    'Noto Sans', 'Helvetica Neue', Arial, sans-serif;
+    'Inter Variable', system-ui, -apple-system, 'Segoe UI', Roboto, Ubuntu,
+    Cantarell, 'Noto Sans', 'Helvetica Neue', Arial, sans-serif;
   --font-mono: ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Consolas, monospace;
 
   /* Paleta clara */
