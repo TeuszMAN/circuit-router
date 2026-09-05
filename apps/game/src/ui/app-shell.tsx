@@ -12,6 +12,7 @@ import { MainMenu } from './screens/main-menu'
 import { LevelSelect } from './screens/level-select'
 import { SettingsScreen } from './screens/settings'
 import { GameScreen } from './screens/game'
+import { ConceptPanel } from './concept-panel'
 
 import '../styles/tokens.css'
 import '../styles/base.css'
@@ -55,9 +56,12 @@ function useSystemTheme(state: AppState): void {
   }, [theme, reducedMotion])
 }
 
-export function AppShell({ state, campaign = bootstrapCampaign() }: AppShellProps) {
-  useSystemTheme(state)
-
+/**
+ * Tela roteada pelo estado corrente. Isolada de `AppShell` para que o painel
+ * de conceito (MI-20) fique montado como irmão fixo abaixo — abrir/fechar o
+ * painel nunca desmonta a tela nem perde o estado do tabuleiro.
+ */
+function CurrentScreen({ state, campaign }: { readonly state: AppState; readonly campaign: Campaign }) {
   const route = state.route.value
 
   switch (route.name) {
@@ -95,6 +99,17 @@ export function AppShell({ state, campaign = bootstrapCampaign() }: AppShellProp
     case 'settings':
       return <SettingsScreen state={state} onBack={() => state.back()} />
   }
+}
+
+export function AppShell({ state, campaign = bootstrapCampaign() }: AppShellProps) {
+  useSystemTheme(state)
+
+  return (
+    <>
+      <CurrentScreen state={state} campaign={campaign} />
+      <ConceptPanel />
+    </>
+  )
 }
 
 /**
