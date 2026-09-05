@@ -1,20 +1,24 @@
 {
   "name": "circuit-router",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "directories": {
-    "doc": "docs"
-  },
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "workspaces": [
+    "packages/core",
+    "packages/content",
+    "apps/game"
+  ],
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "npm run dev --workspace apps/game",
+    "build": "npm run build --workspace apps/game",
+    "preview": "npm run preview --workspace apps/game",
+    "test": "vitest run --config vitest.workspace.ts",
+    "typecheck": "tsc --noEmit -p packages/core/tsconfig.json && tsc --noEmit -p packages/content/tsconfig.json && tsc --noEmit -p apps/game/tsconfig.json"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
   "devDependencies": {
-    "jest": "^30.5.0",
-    "vite": "^8.2.2"
+    "jsdom": "^29.0.0",
+    "typescript": "^7.0.2",
+    "vite": "^8.2.2",
+    "vitest": "^5.0.0"
   }
 }
