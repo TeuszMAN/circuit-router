@@ -1,0 +1,75 @@
+/*
+ * Circuit Router — design tokens (CSS custom properties).
+ * Paleta clara (padrão) e escura via [data-theme='dark'] no <html>.
+ * Sem fonte externa: pilha de sistema (MI-11 troca por fontes auto-hospedadas).
+ */
+:root {
+  color-scheme: light;
+
+  /* Áreas seguras do sistema (notch / gesto inferior) — SDD §7.1. */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+
+  /* Alvo mínimo de toque — SDD §7.2. */
+  --tap: 44px;
+
+  --font-ui:
+    system-ui, -apple-system, 'Segoe UI', Roboto, Ubuntu, Cantarell,
+    'Noto Sans', 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Consolas, monospace;
+
+  /* Paleta clara */
+  --bg: #f3f6fb;
+  --bg-elev: #ffffff;
+  --surface: #ffffff;
+  --surface-2: #e9eef6;
+  --text: #14213d;
+  --text-muted: #5a6a85;
+  --border: #cdd7e6;
+  --accent: #2563eb;
+  --accent-strong: #1d4ed8;
+  --accent-contrast: #ffffff;
+  --accent-soft: #dbe7fe;
+  --danger: #b91c1c;
+  --danger-soft: #fde8e8;
+  --success: #15803d;
+  --success-soft: #dcfce7;
+  --star: #f5b301;
+  --star-empty: #c8d2e2;
+  --overlay: rgba(10, 18, 38, 0.55);
+  --shadow: 0 10px 30px rgba(16, 30, 60, 0.18);
+
+  --radius-s: 10px;
+  --radius-m: 14px;
+  --radius-l: 20px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+}
+
+html[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #0b1220;
+  --bg-elev: #111a2c;
+  --surface: #16203a;
+  --surface-2: #1f2b4a;
+  --text: #e7edf7;
+  --text-muted: #93a3bd;
+  --border: #2c3a5c;
+  --accent: #6ea0ff;
+  --accent-strong: #8db4ff;
+  --accent-contrast: #0b1220;
+  --accent-soft: #1d2c4f;
+  --danger: #f87171;
+  --danger-soft: #3a1d22;
+  --success: #4ade80;
+  --success-soft: #123322;
+  --star: #fbbf24;
+  --star-empty: #33405c;
+  --overlay: rgba(2, 6, 16, 0.68);
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+}
