@@ -1,16 +1,22 @@
 // Índice da campanha (MI-07/MI-17/MI-18): agrega os packs de fases em ordem
 // de jogo. Cada pack carrega o próprio nome/tema e o conceito de Engenharia
 // da Computação que introduz (SDD §9.B), além das fases já validadas pelo
-// solver (ver packs.test.ts).
+// solver ou por simulação explícita (ver packs.test.ts).
 
 import type { LevelSpec } from '@circuit/core/model'
 import { PRIMEIROS_SINAIS_LEVELS } from './01-primeiros-sinais'
 import { NEGACOES_LEVELS } from './02-negacoes'
 import { E_OU_LEVELS } from './03-e-ou'
+import { COMPONDO_LEVELS } from './04-compondo'
+import { CAMINHOS_LEVELS } from './05-caminhos'
+import { SOMANDO_BITS_LEVELS } from './06-somando-bits'
 
 export * from './01-primeiros-sinais'
 export * from './02-negacoes'
 export * from './03-e-ou'
+export * from './04-compondo'
+export * from './05-caminhos'
+export * from './06-somando-bits'
 
 /** Um pack de fases: identidade, tema didático e as fases que o compõem. */
 export interface LevelPack {
@@ -46,5 +52,36 @@ export const E_OU_PACK: LevelPack = {
   levels: E_OU_LEVELS,
 }
 
-/** Todos os packs publicados até aqui (packs 1–3, MI-17), em ordem de jogo. */
-export const PACKS: readonly LevelPack[] = [PRIMEIROS_SINAIS_PACK, NEGACOES_PACK, E_OU_PACK]
+export const COMPONDO_PACK: LevelPack = {
+  id: 'pack-04',
+  name: 'Compondo',
+  theme: 'Composição e precedência',
+  concept: 'Composição de funções; expressão booleana com precedência (· antes de +); circuito de 2 níveis.',
+  levels: COMPONDO_LEVELS,
+}
+
+export const CAMINHOS_PACK: LevelPack = {
+  id: 'pack-05',
+  name: 'Caminhos',
+  theme: 'Roteamento, net, curto e ciclo',
+  concept: 'Net (nó elétrico) e fan-out; conflito de drivers (curto-circuito); realimentação combinacional (ciclo).',
+  levels: CAMINHOS_LEVELS,
+}
+
+export const SOMANDO_BITS_PACK: LevelPack = {
+  id: 'pack-06',
+  name: 'Somando bits',
+  theme: 'Aritmética binária em hardware',
+  concept: 'Aritmética binária em hardware; meio-somador (soma + vai-um) e somador completo; XOR construído a partir de AND/OR/NOT.',
+  levels: SOMANDO_BITS_LEVELS,
+}
+
+/** Todos os 6 packs publicados da campanha (MI-17 e MI-18), em ordem de jogo. */
+export const PACKS: readonly LevelPack[] = [
+  PRIMEIROS_SINAIS_PACK,
+  NEGACOES_PACK,
+  E_OU_PACK,
+  COMPONDO_PACK,
+  CAMINHOS_PACK,
+  SOMANDO_BITS_PACK,
+]
