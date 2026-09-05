@@ -10,5 +10,6 @@
     "./state": "./src/state/index.ts",
     "./gen": "./src/gen/index.ts",
     "./persist": "./src/persist/index.ts"
-  }
+  },
+  "license": "MIT"
 }

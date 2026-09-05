@@ -17,5 +17,6 @@
     "@preact/preset-vite": "^2.10.6",
     "@testing-library/preact": "^3.2.4",
     "vite-plugin-pwa": "^1.3.0"
-  }
+  },
+  "license": "MIT"
 }

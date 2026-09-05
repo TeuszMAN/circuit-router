@@ -92,3 +92,7 @@ npm run typecheck  # tipos dos três projetos
 ```
 
 A suíte cobre: tabelas-verdade das portas, simulação por nets (curto vs ciclo, flutuante, porta sem alimentação), comandos/undo (property test), gerador (mesma seed → mesma fase; 500 fases 100% solucionáveis pelo solver), round-trip de save/migração, componentes da UI em jsdom, áudio com `AudioContext` mockado e renderer Canvas (conversão célula↔pixel, DPR, animação de sinal).
+
+## Licenca
+
+Distribuido sob a licenca **MIT** — veja o arquivo [LICENSE](LICENSE).

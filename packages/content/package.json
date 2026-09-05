@@ -7,5 +7,6 @@
     ".": "./src/index.ts",
     "./packs": "./src/packs/index.ts",
     "./text": "./src/text/index.ts"
-  }
+  },
+  "license": "MIT"
 }
