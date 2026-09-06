@@ -86,6 +86,22 @@
   margin-bottom: var(--space-1);
 }
 
+.hint-banner__close {
+  display: grid;
+  place-items: center;
+  min-width: var(--tap);
+  min-height: var(--tap);
+  margin: calc(-1 * var(--space-2)) calc(-1 * var(--space-2)) calc(-1 * var(--space-2)) 0;
+  border-radius: var(--radius-s);
+  font-size: 1.1rem;
+  color: var(--accent-strong);
+}
+
+.hint-banner__close:active,
+.hint-banner__close:focus-visible {
+  background: var(--surface-2);
+}
+
 /* -- Rodapé do HUD ----------------------------------------------------------- */
 
 .game__hud {
