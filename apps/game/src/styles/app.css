@@ -330,6 +330,18 @@
   transition: background-color 0.15s ease;
 }
 
+.switch::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  min-width: var(--tap);
+  min-height: var(--tap);
+  width: 100%;
+  height: var(--tap);
+}
+
 .switch::after {
   content: '';
   position: absolute;
