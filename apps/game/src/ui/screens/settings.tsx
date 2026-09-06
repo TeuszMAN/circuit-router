@@ -80,7 +80,7 @@ export function SettingsScreen({ state, onBack }: SettingsProps) {
             </span>
           </div>
           <div className="setting-row">
-            <div className="segmented" role="group" aria-label="Tema">
+            <div className="segmented" role="radiogroup" aria-label="Tema">
               {THEME_OPTIONS.map(option => (
                 <button
                   key={option.value}

@@ -19,6 +19,7 @@ describe('SettingsScreen', () => {
     expect(screen.getByRole('heading', { name: 'Configurações' })).toBeTruthy()
     expect(screen.getByRole('switch', { name: 'Som' }).getAttribute('aria-checked')).toBe('true')
     expect(screen.getByRole('switch', { name: 'Vibração' }).getAttribute('aria-checked')).toBe('true')
+    expect(screen.getByRole('radiogroup', { name: 'Tema' })).toBeTruthy()
     expect(screen.getByRole('radio', { name: 'Automático' }).getAttribute('aria-checked')).toBe('true')
     expect(
       screen.getByRole('switch', { name: 'Reduzir animação' }).getAttribute('aria-checked'),
