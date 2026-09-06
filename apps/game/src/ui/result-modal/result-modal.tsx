@@ -10,6 +10,7 @@
  * problema (SDD §4.4 `SimulationIssue.cells`) — nenhum diagnóstico é exibido
  * sem highlight.
  */
+import { useEffect } from 'preact/hooks'
 import {
   HINT_SEAL_LABEL,
   NEXT_LEVEL_LABEL,
@@ -272,6 +273,14 @@ export function ResultModal({
   onRetry,
   onExit,
 }: ResultModalProps) {
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent): void {
+      if (event.key === 'Escape') onRetry()
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [onRetry])
+
   return (
     <div className="result-overlay">
       {outcome.kind === 'win' ? (

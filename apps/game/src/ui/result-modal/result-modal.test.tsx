@@ -258,4 +258,25 @@ describe('ResultModal · erro', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Continuar tentando' }))
     expect(onRetry).toHaveBeenCalledOnce()
   })
+
+  it('a tecla Escape fecha o modal acionando onRetry', () => {
+    const onRetry = vi.fn()
+    render(
+      <ResultModal
+        outcome={{
+          kind: 'error',
+          issues: [{ kind: 'floating', cells: [{ x: 0, y: 0 }] }],
+          sinks: [],
+        }}
+        levelName="Primeira rota"
+        hasNext
+        onNext={NOP}
+        onRetry={onRetry}
+        onExit={NOP}
+      />,
+    )
+
+    fireEvent.keyDown(window, { key: 'Escape' })
+    expect(onRetry).toHaveBeenCalledOnce()
+  })
 })
