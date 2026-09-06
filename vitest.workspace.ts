@@ -26,6 +26,13 @@ export default defineConfig({
           environment: 'jsdom',
         },
       },
+      {
+        test: {
+          name: 'integration',
+          root: './tests',
+          environment: 'node',
+        },
+      },
     ],
   },
 })
