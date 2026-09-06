@@ -95,6 +95,15 @@ describe('GameScreen · HUD', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Retomar' }))
     expect(screen.queryByRole('dialog')).toBeNull()
   })
+
+  it('retoma da pausa com a tecla Escape', () => {
+    renderGame()
+    fireEvent.click(screen.getByRole('button', { name: 'Pausar' }))
+    expect(screen.getByRole('dialog', { name: 'Pausa' })).toBeTruthy()
+
+    fireEvent.keyDown(window, { key: 'Escape' })
+    expect(screen.queryByRole('dialog')).toBeNull()
+  })
 })
 
 describe('GameScreen · simulação e dica', () => {
