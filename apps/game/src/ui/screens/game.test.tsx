@@ -48,7 +48,7 @@ describe('GameScreen · HUD', () => {
     renderGame()
 
     expect(screen.getByTestId('board-slot')).toBeTruthy()
-    expect(screen.getByText(LEVEL.name)).toBeTruthy()
+    expect(screen.getByRole('heading', { name: LEVEL.name, level: 1 })).toBeTruthy()
 
     for (const label of ['Pausar', 'Painel de conceito']) {
       expect(screen.getByRole('button', { name: label })).toBeTruthy()
@@ -93,6 +93,15 @@ describe('GameScreen · HUD', () => {
     expect(screen.getByRole('dialog', { name: 'Pausa' })).toBeTruthy()
 
     fireEvent.click(screen.getByRole('button', { name: 'Retomar' }))
+    expect(screen.queryByRole('dialog')).toBeNull()
+  })
+
+  it('retoma da pausa com a tecla Escape', () => {
+    renderGame()
+    fireEvent.click(screen.getByRole('button', { name: 'Pausar' }))
+    expect(screen.getByRole('dialog', { name: 'Pausa' })).toBeTruthy()
+
+    fireEvent.keyDown(window, { key: 'Escape' })
     expect(screen.queryByRole('dialog')).toBeNull()
   })
 })

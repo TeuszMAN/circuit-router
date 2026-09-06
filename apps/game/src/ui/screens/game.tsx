@@ -185,7 +185,7 @@ export function GameScreen({
         <IconButton label="Pausar" onClick={() => (paused.value = true)}>
           <IconPause />
         </IconButton>
-        <span className="game__topbar-title">{level.name}</span>
+        <h1 className="game__topbar-title">{level.name}</h1>
         <IconButton
           label="Painel de conceito"
           onClick={() => requestConcept(activeTool.value === 'erase' ? undefined : activeTool.value)}

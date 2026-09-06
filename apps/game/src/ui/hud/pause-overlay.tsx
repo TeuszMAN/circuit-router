@@ -2,6 +2,8 @@
  * Overlay de pausa/menu da tela de jogo. Pausa não é punição nem timer — o
  * jogo não tem tempo; o menu existe para respirar, mudar de fase ou sair.
  */
+import { useEffect } from 'preact/hooks'
+
 export interface PauseOverlayProps {
   readonly levelName: string
   readonly onResume: () => void
@@ -10,6 +12,14 @@ export interface PauseOverlayProps {
 }
 
 export function PauseOverlay({ levelName, onResume, onExit, onHome }: PauseOverlayProps) {
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent): void {
+      if (event.key === 'Escape') onResume()
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [onResume])
+
   return (
     <div className="overlay">
       <div

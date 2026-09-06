@@ -15,7 +15,9 @@ describe('HintBanner', () => {
     expect(screen.getByText('Dica extra')).toBeTruthy()
     expect(screen.getByText('Ligue a fonte à porta.')).toBeTruthy()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Fechar dica' }))
+    const closeButton = screen.getByRole('button', { name: 'Fechar dica' })
+    expect(closeButton.className).toContain('hint-banner__close')
+    fireEvent.click(closeButton)
     expect(onClose).toHaveBeenCalledOnce()
   })
 })

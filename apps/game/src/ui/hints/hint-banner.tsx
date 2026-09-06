@@ -10,7 +10,12 @@ export function HintBanner({ label, text, onClose }: HintBannerProps) {
     <div className="hint-banner" data-testid="hint-banner">
       <div className="hint-banner__head">
         <span>{label}</span>
-        <button type="button" aria-label="Fechar dica" onClick={onClose}>
+        <button
+          type="button"
+          className="hint-banner__close"
+          aria-label="Fechar dica"
+          onClick={onClose}
+        >
           ✕
         </button>
       </div>
