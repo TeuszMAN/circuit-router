@@ -48,7 +48,7 @@ describe('GameScreen · HUD', () => {
     renderGame()
 
     expect(screen.getByTestId('board-slot')).toBeTruthy()
-    expect(screen.getByText(LEVEL.name)).toBeTruthy()
+    expect(screen.getByRole('heading', { name: LEVEL.name, level: 1 })).toBeTruthy()
 
     for (const label of ['Pausar', 'Painel de conceito']) {
       expect(screen.getByRole('button', { name: label })).toBeTruthy()
