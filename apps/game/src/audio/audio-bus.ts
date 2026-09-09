@@ -195,11 +195,17 @@ export class WebAudioBus implements AudioBus {
   unlock(): void {
     if (this.disposed) return
     if (this.ctx === null) {
-      const ctx = this.createContext()
-      this.ctx = ctx
+      let ctx: AudioContext
+      try {
+        ctx = this.createContext()
+      } catch {
+        // Áudio indisponível não pode cancelar o gesto que edita o circuito.
+        return
+      }
       const master = ctx.createGain()
       master.gain.value = this.muted ? 0 : this.volume
       master.connect(ctx.destination)
+      this.ctx = ctx
       this.master = master
     }
     this.unlocked = true

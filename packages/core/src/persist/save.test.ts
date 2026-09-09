@@ -38,6 +38,25 @@ function seed(storage: MemoryStorage, data: unknown): void {
 }
 
 describe('SaveStore: round-trip (MI-06)', () => {
+  it('preserva vitória em memória se o storage falhar e tenta novamente na próxima gravação', () => {
+    const memory = new MemoryStorage()
+    let unavailable = true
+    const store = new SaveStore({
+      getItem: key => memory.getItem(key),
+      setItem: (key, value) => {
+        if (unavailable) throw new Error('QuotaExceededError')
+        memory.setItem(key, value)
+      },
+      removeItem: key => memory.removeItem(key),
+    })
+    expect(() => store.recordLevelResult('p1-1', { stars: 3 })).not.toThrow()
+    expect(store.levelProgress('p1-1')?.stars).toBe(3)
+    expect(store.persistenceFailed).toBe(true)
+    unavailable = false
+    store.recordLevelResult('p1-2', { stars: 1 })
+    expect(store.persistenceFailed).toBe(false)
+    expect(new SaveStore(memory).levelProgress('p1-1')?.stars).toBe(3)
+  })
   it('save padrão começa vazio e com a versão atual', () => {
     const store = new SaveStore(new MemoryStorage())
     expect(store.data.schemaVersion).toBe(SAVE_SCHEMA_VERSION)

@@ -31,6 +31,7 @@ export interface VictoryDetails {
   readonly gateLimit: number
   /** A fase foi vencida usando a dica de nível 2 (SDD §9.C.2). */
   readonly usedHint?: boolean
+  readonly saved?: boolean
 }
 
 export interface FailureDetails {
@@ -156,6 +157,9 @@ function VictoryModal({
         {WIN_TITLE}
       </h2>
       <p className="result-card__subtitle">{levelName}</p>
+      {details.saved === false ? (
+        <p role="status">O progresso está guardado só nesta sessão. O navegador não permitiu salvar no dispositivo.</p>
+      ) : null}
       {details.usedHint === true ? (
         <span className="hint-seal" data-testid="hint-seal">
           {HINT_SEAL_LABEL}

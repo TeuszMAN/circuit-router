@@ -172,6 +172,7 @@ export function GameScreen({
       usedGates: gates,
       gateLimit: maxGates,
       usedHint: hint.used,
+      saved: !state.storageFailed.value,
     }
   }
 

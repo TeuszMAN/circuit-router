@@ -6,7 +6,6 @@ import { AppShell } from '../ui/app-shell'
 import { createAppState, createMemoryStorage } from '../ui/state'
 import { createCampaign } from './content'
 import { CanvasBoardRenderer } from '../board'
-import { WebAudioBus } from '../audio'
 import { computeBoardLayout, cellRect } from '../board/geometry'
 import { installCanvas2DMock, makeResizeObserverDriver } from '../board/renderer-test-helpers'
 
@@ -17,8 +16,6 @@ let observer: ReturnType<typeof makeResizeObserverDriver>
 let renderSpy: MockInstance<CanvasBoardRenderer['render']>
 
 beforeEach(() => {
-  // jsdom não fornece dispositivo de áudio; o circuito usa engine/editor reais.
-  vi.spyOn(WebAudioBus.prototype, 'unlock').mockImplementation(() => {})
   restoreCanvas = installCanvas2DMock().restore
   observer = makeResizeObserverDriver()
   vi.stubGlobal('ResizeObserver', observer.ctor)
@@ -89,6 +86,19 @@ describe('jogabilidade pela composição real (ponteiro → editor → simulaç�
     await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Próxima fase' })) })
     expect(state.route.value).toEqual({ name: 'game', levelId: 'p1-2' })
     expect(board()).toEqual({ levelId: 'p1-2', placedCells: [] })
+  })
+
+  it('vence e avança mesmo sem AudioContext e com gravação recusada', async () => {
+    const level = levels[0]!
+    const { state, storage } = await mount(level)
+    vi.spyOn(storage, 'setItem').mockImplementation(() => { throw new Error('QuotaExceededError') })
+    await gesture(level, [{ x: 0, y: 0 }, { x: 2, y: 0 }])
+    fireEvent.click(screen.getByRole('button', { name: 'Simular circuito' }))
+    expect(await screen.findByText('Fase concluída!')).toBeTruthy()
+    expect(screen.getByText(/O progresso está guardado só nesta sessão/)).toBeTruthy()
+    expect(state.progressFor(level.id)?.stars).toBe(3)
+    fireEvent.click(screen.getByRole('button', { name: 'Próxima fase' }))
+    expect(state.route.value).toEqual({ name: 'game', levelId: 'p1-2' })
   })
 
   it('vence fan-out com dois arrastos compartilhando uma junção', async () => {

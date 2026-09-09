@@ -149,6 +149,8 @@ Determinismo: toda a cadeia é dirigida por PRNG semeado (`Rng` + `mixSeed`) —
 
 **10.4 Extensibilidade.** O storage fica atrás de interface (`StorageLike`) — sync remoto futuro é um adaptador novo, não uma reescrita (ADR-0001).
 
+**10.5 Storage indisponível.** Falhas de acesso/gravação não impedem iniciar, editar ou vencer. O progresso permanece em memória, `persistenceFailed` sinaliza a falha e o modal informa que ele dura apenas a sessão. A próxima gravação tenta persistir novamente todo o estado acumulado.
+
 ---
 
 **11. Áudio**
@@ -156,6 +158,8 @@ Determinismo: toda a cadeia é dirigida por PRNG semeado (`Rng` + `mixSeed`) —
 **11.1 WebAudio com desbloqueio por gesto.** `WebAudioBus implements AudioBus` (`apps/game/src/audio/`): o `AudioContext` **só é criado no primeiro `unlock()`**, chamado a partir de um gesto do usuário — zero warning de autoplay, nada toca antes de interação.
 
 **11.2 SFX sintetizados.** place/erase/rotate/success/error gerados por oscilador+envelope (sem arquivos pesados).
+
+Se a criação do `AudioContext` for recusada ou a API estiver ausente, `unlock()` retorna silenciosamente e o gesto de edição continua.
 
 **11.3 Música ambiente.** Pad de acordes com scheduler; `setMusicEnabled` liga/desliga; fade no bus próprio.
 

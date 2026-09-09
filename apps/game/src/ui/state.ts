@@ -35,6 +35,7 @@ export interface AppState {
   readonly theme: Signal<ThemeSetting>
   readonly haptics: Signal<boolean>
   readonly reducedMotion: Signal<boolean>
+  readonly storageFailed: Signal<boolean>
 
   setSettings(patch: Partial<SaveSettings>): void
   recordResult(levelId: string, result: LevelResultInput): void
@@ -57,6 +58,15 @@ export function createMemoryStorage(): StorageLike {
   }
 }
 
+/** Adia o acesso ao getter localStorage para dentro da recuperação do SaveStore. */
+export function createBrowserStorage(): StorageLike {
+  return {
+    getItem: key => window.localStorage.getItem(key),
+    setItem: (key, value) => window.localStorage.setItem(key, value),
+    removeItem: key => window.localStorage.removeItem(key),
+  }
+}
+
 export function createAppState(storage?: StorageLike): AppState {
   const save = new SaveStore(storage ?? createMemoryStorage())
 
@@ -68,6 +78,7 @@ export function createAppState(storage?: StorageLike): AppState {
   const theme = signal<ThemeSetting>(save.settings.theme)
   const haptics = signal(save.settings.haptics)
   const reducedMotion = signal(save.settings.reducedMotion)
+  const storageFailed = signal(save.persistenceFailed)
 
   return {
     route,
@@ -89,9 +100,11 @@ export function createAppState(storage?: StorageLike): AppState {
     theme,
     haptics,
     reducedMotion,
+    storageFailed,
 
     setSettings(patch) {
       const updated = save.updateSettings(patch)
+      storageFailed.value = save.persistenceFailed
       muted.value = updated.muted
       theme.value = updated.theme
       haptics.value = updated.haptics
@@ -100,6 +113,7 @@ export function createAppState(storage?: StorageLike): AppState {
 
     recordResult(levelId, result) {
       save.recordLevelResult(levelId, result)
+      storageFailed.value = save.persistenceFailed
       const stored = save.levelProgress(levelId)
       if (stored === undefined) return
       progress.value = { ...progress.value, [levelId]: stored }
