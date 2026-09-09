@@ -16,7 +16,7 @@ function makeLevel(): LevelSpec {
       { coord: { x: 0, y: 0 }, cell: { kind: 'source', value: 1, outputSide: 'E' } },
       { coord: { x: 4, y: 2 }, cell: { kind: 'sink', expected: 1, inputSide: 'W' } },
     ],
-    inventory: { wires: null, gates: {} },
+    inventory: { wires: null, gates: { AND: null, OR: null, NOT: null } },
     hints: ['dica', 'dica'],
     starThresholds: { maxPieces: 99, maxGates: 99 },
   }

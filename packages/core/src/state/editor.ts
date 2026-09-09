@@ -15,6 +15,7 @@ import type {
   PlacedCell,
   WireCell,
 } from '../model'
+import { remainingInventory } from './inventory'
 
 const OPPOSITE: Readonly<Record<Direction, Direction>> = {
   N: 'S',
@@ -144,6 +145,8 @@ export class LevelEditor {
   private transition(apply: (placed: readonly PlacedCell[]) => PlacedCell[] | null): boolean {
     const next = apply(this._board.placedCells)
     if (next === null) return false
+    const remaining = remainingInventory(this.level, { levelId: this.level.id, placedCells: next })
+    if ([remaining.wires, ...Object.values(remaining.gates)].some(count => count !== null && count < 0)) return false
     this.undoStack.push(this._board)
     if (this.undoStack.length > this.maxHistory) this.undoStack.shift()
     this.redoStack.length = 0

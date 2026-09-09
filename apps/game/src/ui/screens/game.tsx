@@ -11,6 +11,8 @@
 import { useSignal } from '@preact/signals'
 import { useEffect, useRef } from 'preact/hooks'
 import { simulate } from '@circuit/core/sim'
+import { remainingInventory } from '@circuit/core/state'
+import { GAMEPLAY_HELP } from '@circuit/content/text'
 import type { BoardState, LevelSpec, SimulationResult } from '@circuit/core/model'
 import type { AudioBus, BoardRenderer, InputController } from '../../app/contracts'
 import type { AppState } from '../state'
@@ -195,6 +197,8 @@ export function GameScreen({
         </IconButton>
       </header>
 
+      <p className="game__instructions">{GAMEPLAY_HELP[activeTool.value]}</p>
+
       <div className="game__stage">
         <BoardHost
           renderer={services?.renderer}
@@ -257,7 +261,8 @@ export function GameScreen({
             <IconPlay />
           </IconButton>
         </div>
-        <ToolPalette activeTool={activeTool} />
+        <ToolPalette activeTool={activeTool} inventory={level.inventory}
+          remaining={remainingInventory(level, services.getBoard?.() ?? emptyBoard(level.id))} />
       </footer>
     </div>
   )

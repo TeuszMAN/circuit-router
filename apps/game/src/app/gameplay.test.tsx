@@ -70,6 +70,8 @@ describe('jogabilidade pela composição real (ponteiro → editor → simulaç�
   it('fase 1: entra pelo menu, corrige falha, monta em etapas, desfaz/refaz, vence, persiste e avança', async () => {
     const level = levels[0]!
     const { state, storage } = await mount(level, true)
+    expect((screen.getByRole('button', { name: 'Ferramenta AND' }) as HTMLButtonElement).disabled).toBe(true)
+    expect(screen.getByText(/Arraste da fonte até o destino/)).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Simular circuito' }))
     expect(await screen.findByText('O circuito ainda não fechou')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Continuar tentando' }))

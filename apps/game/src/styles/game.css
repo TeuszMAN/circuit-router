@@ -39,6 +39,18 @@
   position: relative;
 }
 
+.game__instructions {
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 8px max(var(--safe-right), 12px) 8px max(var(--safe-left), 12px);
+  font-size: 0.8rem;
+  line-height: 1.4;
+  background: var(--bg-elev);
+  color: var(--text-muted);
+}
+
+.palette__tool:disabled { opacity: 0.4; }
+
 /* Região onde o BoardRenderer (MI-08) monta o canvas. */
 .board-slot {
   flex: 1;

@@ -4,3 +4,4 @@
 export * from './glossary'
 export * from './diagnostics'
 export * from './results'
+export * from './gameplay'

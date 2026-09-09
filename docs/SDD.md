@@ -92,6 +92,8 @@ Arrastos unem os lados dos fios existentes e preservam portas (fixas ou do jogad
 
 **6.3 Invariante.** Nenhum comando sobrescreve célula fixa do nível (`isFixed`); comando sobre célula fixa é rejeitado sem alterar estado. Property test: 200 comandos aleatórios + 200 undos voltam ao estado inicial.
 
+**6.4 Inventário.** Transições validam o estoque sobre o estado final (apenas peças do jogador). Tipo de porta omitido equivale a zero; `null` é ilimitado. Arrasto que excede o estoque é rejeitado inteiro, preservando undo/redo. Apagar, substituir ou desfazer devolve as peças correspondentes. A paleta mostra quantidades restantes e desabilita portas não permitidas; fio continua selecionável para unir trechos já existentes mesmo sem estoque novo.
+
 ---
 
 **7. Interface e interação (touch-first)**

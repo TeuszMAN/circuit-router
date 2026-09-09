@@ -77,7 +77,7 @@ describe('GameScreen · HUD', () => {
 
   it('seleciona a ferramenta ativa na paleta', () => {
     renderGame()
-    const and = screen.getByRole('button', { name: 'Ferramenta AND' }) as HTMLButtonElement
+    const and = screen.getByRole('button', { name: 'Ferramenta Borracha' }) as HTMLButtonElement
     const wire = screen.getByRole('button', { name: 'Ferramenta Fio' }) as HTMLButtonElement
     expect(wire.getAttribute('aria-pressed')).toBe('true')
     expect(and.getAttribute('aria-pressed')).toBe('false')
