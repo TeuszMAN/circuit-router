@@ -199,8 +199,8 @@ export class LevelEditor {
 
   /**
    * Traço contínuo de fios (drag-to-connect, SDD §6.2): células fixas são
-   * puladas e TODO o traço vira um único comando de undo. Substitui peças do
-   * jogador existentes nas células do caminho.
+   * puladas e TODO o traço vira um único comando de undo. Preserva portas e
+   * une lados de fios existentes para continuar rotas e criar ramificações.
    */
   dragWires(path: readonly WirePlacement[]): boolean {
     if (path.length === 0) return false
@@ -210,7 +210,11 @@ export class LevelEditor {
       for (const step of path) {
         const { x, y } = step.coord
         if (!this.isInside(x, y) || this.isFixed(x, y)) continue
-        const wire: WireCell = { kind: 'wire', sides: step.sides }
+        const existing = next.find(p => sameCoord(p.coord, step.coord))?.cell
+        if (existing?.kind === 'gate') continue
+        const sides = [...new Set([...(existing?.sides ?? []), ...step.sides])]
+        if (sides.length === 0 || (existing && sides.length === existing.sides.length)) continue
+        const wire: WireCell = { kind: 'wire', sides }
         next = upsert(next, { coord: { x, y }, cell: wire })
         changed = true
       }

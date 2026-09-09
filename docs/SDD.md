@@ -88,6 +88,8 @@ Implementação real em `packages/core/src/sim/engine.ts` — **é o algoritmo q
 
 **6.2 Undo/redo.** Pilhas de estados com limite configurável. **Um traço inteiro de arrasto é coalescido em UM único passo de undo** (`dragWires(path)`), mesmo com dezenas de células — o jogador desfaz o gesto, não a célula. Nova edição limpa a pilha de redo.
 
+Arrastos unem os lados dos fios existentes e preservam portas (fixas ou do jogador). Assim uma rota pode ser construída em vários gestos e ramificada em T/+; repassar uma conexão idêntica não cria histórico. A posição do `pointerup` também integra o caminho. Trocar para borracha e tocar apaga a peça mesmo que ela já estivesse selecionada; seleção sozinha não coloca nem substitui portas.
+
 **6.3 Invariante.** Nenhum comando sobrescreve célula fixa do nível (`isFixed`); comando sobre célula fixa é rejeitado sem alterar estado. Property test: 200 comandos aleatórios + 200 undos voltam ao estado inicial.
 
 ---

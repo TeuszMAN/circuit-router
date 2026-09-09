@@ -96,6 +96,12 @@ describe('PointerInputController — traço de arrasto', () => {
     ])
   })
 
+  it('inclui a célula de soltura mesmo sem pointermove final', () => {
+    firePointer(element, 'pointerdown', { pointerId: 1, x: 10, y: 10 })
+    firePointer(element, 'pointerup', { pointerId: 1, x: 50, y: 10 })
+    expect(commands).toEqual([{ type: 'drag-path', path: [{ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 2, y: 0 }] }])
+  })
+
   it('arrasto rápido em diagonal produz caminho ortogonal contínuo sem buracos', () => {
     const start = coordCenter({ x: 0, y: 0 })
     // Salta direto para (3,3): o pointermove real de um dedo rápido não passa

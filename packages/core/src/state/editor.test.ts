@@ -122,6 +122,39 @@ describe('LevelEditor: comandos básicos (MI-04)', () => {
 })
 
 describe('LevelEditor: traço e histórico (MI-04)', () => {
+  it('continua um fio e cria ramificação sem apagar os lados anteriores', () => {
+    const editor = new LevelEditor(makeLevel())
+    editor.dragWires([{ coord: { x: 2, y: 1 }, sides: ['W', 'E'] }])
+    const before = editor.board
+    editor.dragWires([{ coord: { x: 2, y: 1 }, sides: ['S'] }])
+    expect(editor.cellAt(2, 1)?.cell).toEqual({ kind: 'wire', sides: ['W', 'E', 'S'] })
+    editor.undo()
+    expect(editor.board).toBe(before)
+    editor.redo()
+    expect(editor.cellAt(2, 1)?.cell).toEqual({ kind: 'wire', sides: ['W', 'E', 'S'] })
+  })
+
+  it('preserva portas do jogador quando o fio começa ou termina nelas', () => {
+    const editor = new LevelEditor(makeLevel())
+    editor.placeGate(2, 1, 'NOT', 'E')
+    editor.dragWires([
+      { coord: { x: 1, y: 1 }, sides: ['W', 'E'] },
+      { coord: { x: 2, y: 1 }, sides: ['W', 'E'] },
+      { coord: { x: 3, y: 1 }, sides: ['W', 'E'] },
+    ])
+    expect(editor.cellAt(2, 1)?.cell.kind).toBe('gate')
+    expect(editor.board.placedCells).toHaveLength(3)
+  })
+
+  it('repassar o mesmo fio não consome histórico nem descarta redo', () => {
+    const editor = new LevelEditor(makeLevel())
+    const path = [{ coord: { x: 1, y: 1 }, sides: ['W', 'E'] as const }]
+    editor.dragWires(path)
+    editor.placeWire(3, 1, ['W', 'E'])
+    editor.undo()
+    expect(editor.dragWires(path)).toBe(false)
+    expect(editor.canRedo).toBe(true)
+  })
   it('undo de um traço de N células restaura o estado exato em UMA operação', () => {
     const level = makeLevel()
     const editor = new LevelEditor(level, emptyBoard(level))

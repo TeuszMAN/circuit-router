@@ -2,14 +2,14 @@ import { useEffect, useMemo, useRef, useState } from 'preact/hooks'
 import type { Signal } from '@preact/signals'
 import { LevelEditor } from '@circuit/core/state'
 import { simulateWithTrace } from '@circuit/core/sim'
-import type { LevelSpec, BoardState, Coord, GateType, SimulationResult } from '@circuit/core/model'
+import type { LevelSpec, BoardState, Coord, Direction, SimulationIssue } from '@circuit/core/model'
 import { CanvasBoardRenderer } from '../board'
 import { PointerInputController } from '../input'
 import { WebAudioBus } from '../audio'
 import type { GameServices } from '../ui/screens/game'
 import type { AppState } from '../ui/state'
 import type { Tool } from '../ui/hud/tool-palette'
-import type { AudioBus } from './contracts'
+import type { AudioBus, InputCommand } from './contracts'
 
 // Global audio bus instance (MI-12). It survives across levels.
 let globalAudioBus: AudioBus | null = null
@@ -40,7 +40,8 @@ export function useGameComposition(
   const editor = editorRef.current
 
   const [board, setBoard] = useState<BoardState>(editor.board)
-  const [issues, setIssues] = useState<readonly any[]>([])
+  const [issues, setIssues] = useState<readonly SimulationIssue[]>([])
+  const [selected, setSelected] = useState<Coord | null>(null)
 
   const rendererRef = useRef<CanvasBoardRenderer | null>(null)
   const inputRef = useRef<PointerInputController | null>(null)
@@ -51,9 +52,12 @@ export function useGameComposition(
   if (inputRef.current === null) {
     inputRef.current = new PointerInputController({
       cellAt: (x, y) => rendererRef.current?.cellAt(x, y) ?? null,
+      getTool: () => activeToolSignal.value,
       hasGateAt: (coord) => {
-        const cell = editor.cellAt(coord.x, coord.y)
-        return cell?.cell.kind === 'gate'
+        const cell = editorRef.current?.cellAt(coord.x, coord.y)
+        const tool = activeToolSignal.value
+        return cell?.cell.kind === 'gate' && !cell.fixed &&
+          (tool === 'wire' || cell.cell.gate === tool)
       },
     })
   }
@@ -81,6 +85,7 @@ export function useGameComposition(
       if (editor.undo()) {
         audio.play('erase')
         setBoard(editor.board)
+        setIssues([])
       }
     },
     onRedo: () => {
@@ -88,6 +93,7 @@ export function useGameComposition(
       if (editor.redo()) {
         audio.play('place')
         setBoard(editor.board)
+        setIssues([])
       }
     },
     onClear: () => {
@@ -95,6 +101,7 @@ export function useGameComposition(
       if (editor.clear()) {
         audio.play('erase')
         setBoard(editor.board)
+        setIssues([])
       }
     }
   }), [editor, renderer, input, audio, board])
@@ -105,22 +112,22 @@ export function useGameComposition(
       level,
       board: editor.board,
       issues,
-      selected: input.getSelected()
+      selected,
     })
-  }, [renderer, level, board, issues, input.getSelected()])
+  }, [renderer, level, board, issues, selected])
 
   // Hook up input commands
   useEffect(() => {
-    const handleCommand = (cmd: any) => {
+    const handleCommand = (cmd: InputCommand) => {
       audio.unlock()
       const tool = activeToolSignal.value
       
       let changed = false
       if (cmd.type === 'drag-path') {
         if (tool === 'wire') {
-          const pathCoords: Coord[] = cmd.path
+          const pathCoords = cmd.path
           const placements = pathCoords.map((coord, i) => {
-            const sides: ('N' | 'S' | 'E' | 'W')[] = []
+            const sides: Direction[] = []
             if (i > 0) {
               const prev = pathCoords[i - 1]!
               if (prev.x < coord.x) sides.push('W')
@@ -145,30 +152,33 @@ export function useGameComposition(
       } else if (cmd.type === 'rotate') {
         changed = editor.rotateGate(cmd.coord.x, cmd.coord.y)
         if (changed) audio.play('rotate')
+      } else if (cmd.type === 'place-gate') {
+        const cell = editor.cellAt(cmd.coord.x, cmd.coord.y)?.cell
+        // Selecionar uma porta existente preserva sua orientação.
+        if (cell?.kind !== 'gate' || cell.gate !== cmd.gate) {
+          changed = editor.placeGate(cmd.coord.x, cmd.coord.y, cmd.gate, 'E')
+          if (changed) audio.play('place')
+        }
+      } else if (cmd.type === 'erase') {
+        changed = editor.erase(cmd.coord.x, cmd.coord.y)
+        if (changed) audio.play('erase')
+      } else if (cmd.type === 'undo') {
+        changed = editor.undo()
+      } else if (cmd.type === 'redo') {
+        changed = editor.redo()
+      } else if (cmd.type === 'clear-board') {
+        changed = editor.clear()
       }
       
-      if (changed) setBoard(editor.board)
+      if (changed) {
+        setBoard(editor.board)
+        setIssues([])
+      }
     }
     
     const unbindCmd = input.onCommand(handleCommand)
     
-    const unbindSel = input.onSelectionChange((coord) => {
-      if (!coord) return
-      
-      audio.unlock()
-      const tool = activeToolSignal.value
-      let changed = false
-      
-      if (tool === 'erase') {
-        changed = editor.erase(coord.x, coord.y)
-        if (changed) audio.play('erase')
-      } else if (tool === 'AND' || tool === 'OR' || tool === 'NOT') {
-        changed = editor.placeGate(coord.x, coord.y, tool, 'E')
-        if (changed) audio.play('place')
-      }
-      
-      if (changed) setBoard(editor.board)
-    })
+    const unbindSel = input.onSelectionChange(setSelected)
     
     return () => {
       unbindCmd()
