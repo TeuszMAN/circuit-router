@@ -226,7 +226,8 @@ function buildGraph(level: LevelSpec, board: BoardState): BuiltGraph {
     const cell = cells.get(key) as Cell
     const { x, y } = parseCoordKey(key)
 
-    if (cell.kind === 'wire') continue
+    // Paredes ocupam a célula, mas não possuem terminais elétricos.
+    if (cell.kind === 'wire' || cell.kind === 'empty') continue
 
     if (cell.kind === 'sink') {
       const netId = netIdOfNeighborWire(x, y, cell.inputSide)
@@ -242,7 +243,7 @@ function buildGraph(level: LevelSpec, board: BoardState): BuiltGraph {
     }
 
     // Driver (source ou saída de porta).
-    const outSide = cell.kind === 'source' ? cell.outputSide : (cell as GateCell).outputSide
+    const outSide = cell.outputSide
     const nb = neighbor(x, y, outSide)
     if (!nb) continue
     const nbCell = cells.get(coordKey(nb.x, nb.y))

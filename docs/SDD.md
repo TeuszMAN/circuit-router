@@ -40,7 +40,7 @@
 - `SinkCell`: espera valor `expected` pelo `inputSide`.
 - `WireCell`: transporta sinal; `sides` = lados ativos (fio reto, curva, junção em T/+).
 - `GateCell`: porta com `inputSides` **declarados explicitamente** + `outputSide`, ambos já refletindo a rotação.
-- `EmptyCell`: célula vazia editável (vira fio/porta) — nunca entra na simulação.
+- `EmptyCell`: quando declarada em `fixedCells`, é uma parede visível e não editável. Permanece na ocupação para impedir sobreposição, mas não possui terminais e é ignorada na construção do grafo elétrico. Espaços editáveis são coordenadas sem célula fixa.
 
 **3.3 Portas.** `GateType = 'AND' | 'OR' | 'NOT'` no v1 (XOR é *construído* com AND/OR/NOT — é conteúdo do Pack 6, não peça). `GATE_ARITY` valida `inputSides` por tipo: NOT tem 1 entrada (oposta à saída); AND/OR têm 2 (a oposta e a vizinha no sentido horário) — regra `inputSidesFor(gate, outputSide)` do core, que autores de fase podem sobrescrever declarando `inputSides` no `LevelSpec`. Rotação é horária (N→E→S→W) via `rotateCw`.
 

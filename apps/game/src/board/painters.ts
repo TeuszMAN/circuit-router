@@ -324,6 +324,10 @@ function paintCell(
   const key = coordKey(x, y)
   switch (cell.kind) {
     case 'empty':
+      // Uma célula vazia fixa representa obstáculo, não espaço editável.
+      fillRoundRect(ctx, rect.x + rect.w * 0.1, rect.y + rect.h * 0.1,
+        rect.w * 0.8, rect.h * 0.8, rect.w * 0.08, theme.wireIdle)
+      text(ctx, '×', rect.x + rect.w / 2, rect.y + rect.h / 2, rect.w * 0.5, theme.text)
       return
     case 'source':
       paintSource(ctx, rect, cell, theme)

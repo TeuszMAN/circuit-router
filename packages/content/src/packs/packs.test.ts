@@ -137,12 +137,7 @@ describe('todas as fases são resolvíveis (solveLevel ou solução explícita +
           placedCells: placedCells as PlacedCell[],
         }
 
-        const electricSpec: LevelSpec = {
-          ...level,
-          fixedCells: level.fixedCells.filter(f => f.cell.kind !== 'empty'),
-        }
-
-        const sim = simulate(electricSpec, board)
+        const sim = simulate(level, board)
         expect(sim.ok).toBe(true)
         expect(sim.sinks.every(s => s.satisfied)).toBe(true)
 
@@ -497,11 +492,7 @@ describe('Packs 5 e 6 — ★3 inatingível com solução ingênua, atingível c
     expect(naiveWires.length).toBe(7)
     expect(naiveWires.length).toBeGreaterThan(p5_4.starThresholds.maxPieces)
 
-    const electricSpec: LevelSpec = {
-      ...p5_4,
-      fixedCells: p5_4.fixedCells.filter(f => f.cell.kind !== 'empty'),
-    }
-    const sim = simulate(electricSpec, { levelId: p5_4.id, placedCells: naiveWires })
+    const sim = simulate(p5_4, { levelId: p5_4.id, placedCells: naiveWires })
     expect(sim.ok).toBe(true)
     expect(sim.sinks.every(s => s.satisfied)).toBe(true)
 

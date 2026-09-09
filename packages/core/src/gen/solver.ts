@@ -212,11 +212,7 @@ export function solveLevel(level: LevelSpec): SolveResult {
   }
 
   const board: BoardState = { levelId: level.id, placedCells: placed }
-  // Paredes (`fixedCells` kind 'empty') são eletricamente inertes: sem lados,
-  // sem fios sobre elas. O motor de simulação (MI-03) ainda não as tolera, então
-  // a verificação roda sobre uma cópia sem paredes — resultado idêntico.
-  const electricSpec: LevelSpec = { ...level, fixedCells: level.fixedCells.filter(f => f.cell.kind !== 'empty') }
-  const result = simulate(electricSpec, board)
+  const result = simulate(level, board)
   if (!result.ok || result.sinks.some(s => !s.satisfied)) {
     return { solved: false, reason: 'not-satisfied' }
   }

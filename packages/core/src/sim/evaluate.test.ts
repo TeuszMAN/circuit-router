@@ -56,6 +56,20 @@ const gate = (
 
 const emptyBoard = board([])
 
+describe('paredes no LevelSpec original', () => {
+  it('simula sem lançar e nunca conduz através de uma parede, mesmo com fio sobreposto', () => {
+    const spec = level(3, 1, [src(0, 0, 1, 'E'), fixed({ x: 1, y: 0 }, { kind: 'empty' }), snk(2, 0, 1, 'W')])
+    expect(simulate(spec, emptyBoard).ok).toBe(false)
+    expect(simulate(spec, board([W(1, 0, ['W', 'E'])])).sinks[0]?.actual).toBeUndefined()
+  })
+
+  it('permite vencer contornando a parede sem removê-la da especificação', () => {
+    const spec = level(5, 2, [src(0, 1, 1, 'E'), fixed({ x: 2, y: 1 }, { kind: 'empty' }), snk(4, 1, 1, 'W')])
+    const solution = board([W(1, 1, ['W', 'N']), W(1, 0, ['S', 'E']), W(2, 0, ['W', 'E']), W(3, 0, ['W', 'S']), W(3, 1, ['N', 'E'])])
+    expect(simulateWithTrace(spec, solution, { trace: true }).result.ok).toBe(true)
+  })
+})
+
 /** Monta linha de teste de porta: fonte A e B alimentam entradas W e N; sink na saída E. */
 function gateRig(g: GateType, a: 0 | 1, b: 0 | 1, expected: 0 | 1): LevelSpec {
   return level(3, 2, [
