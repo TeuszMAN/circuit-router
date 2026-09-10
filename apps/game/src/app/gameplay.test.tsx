@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } from 'vitest'
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/preact'
-import type { Coord, LevelSpec } from '@circuit/core/model'
+import type { Coord, Direction, LevelSpec, PlacedCell } from '@circuit/core/model'
+import { solveLevel } from '@circuit/core/gen'
 import { PACKS } from '@circuit/content/packs'
 import { AppShell } from '../ui/app-shell'
 import { createAppState, createMemoryStorage } from '../ui/state'
@@ -65,6 +66,50 @@ async function gesture(level: LevelSpec, path: readonly Coord[]) {
 }
 
 function board() { return renderSpy.mock.calls.at(-1)![0].board }
+
+const wire = (x: number, y: number, sides: readonly Direction[]): PlacedCell => ({ coord: { x, y }, cell: { kind: 'wire', sides } })
+// Referências manuais das três fases fora da topologia suportada pelo solver v1.
+const manualSolutions: Record<string, readonly PlacedCell[]> = {
+  'p5-2': [wire(1, 0, ['W', 'S']), wire(1, 1, ['N', 'E']), wire(2, 1, ['W', 'E']), wire(3, 1, ['W', 'E'])],
+  'p5-3': [wire(1, 1, ['W', 'E']), wire(3, 1, ['W', 'E'])],
+  'p6-3': [
+    wire(3, 1, ['W', 'E']), wire(4, 1, ['W', 'S']), wire(3, 3, ['W', 'N', 'S']),
+    wire(5, 2, ['W', 'N', 'S']), wire(5, 1, ['S', 'E']), wire(5, 3, ['N', 'E']),
+    wire(7, 3, ['W', 'N', 'S']), wire(7, 4, ['N', 'S']), wire(3, 4, ['N', 'S']),
+    wire(3, 5, ['N', 'E']), wire(4, 5, ['W', 'E']), wire(5, 5, ['W', 'E']), wire(6, 5, ['W', 'E']),
+  ],
+}
+
+describe('campanha completa montada com eventos de ponteiro', () => {
+  for (const level of levels) {
+    it(`${level.id}: monta uma solução por gestos, vence e oferece saída`, async () => {
+      const solution = manualSolutions[level.id] ?? solveLevel(level).board?.placedCells
+      expect(solution).toBeDefined()
+      const { state } = await mount(level)
+      const steps: Record<Direction, Coord> = { N: { x: 0, y: -1 }, S: { x: 0, y: 1 }, E: { x: 1, y: 0 }, W: { x: -1, y: 0 } }
+      const occupied = new Set([...level.fixedCells, ...solution!].filter(p => p.cell.kind !== 'empty').map(p => `${p.coord.x},${p.coord.y}`))
+      const seenEdges = new Set<string>()
+      for (const { coord, cell } of solution!) {
+        if (cell.kind !== 'wire') throw new Error('A referência deve conter apenas fios')
+        for (const side of cell.sides) {
+          const delta = steps[side]
+          const other = { x: coord.x + delta.x, y: coord.y + delta.y }
+          if (!occupied.has(`${other.x},${other.y}`)) continue
+          const edge = [`${coord.x},${coord.y}`, `${other.x},${other.y}`].sort().join('|')
+          if (seenEdges.has(edge)) continue
+          seenEdges.add(edge)
+          // Não injeta BoardState: cada conexão atravessa input, composição e editor reais.
+          await gesture(level, [coord, other])
+        }
+      }
+      fireEvent.click(screen.getByRole('button', { name: 'Simular circuito' }))
+      expect(await screen.findByText('Fase concluída!')).toBeTruthy()
+      expect(state.progressFor(level.id)?.stars).toBe(3)
+      const last = level === levels[levels.length - 1]
+      expect(screen.getByRole('button', { name: last ? 'Voltar às fases' : 'Próxima fase' })).toBeTruthy()
+    })
+  }
+})
 
 describe('jogabilidade pela composição real (ponteiro → editor → simulação → UI)', () => {
   it('liga pinch e controles de zoom ao renderizador sem desenhar durante o gesto de dois dedos', async () => {
