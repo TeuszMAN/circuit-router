@@ -42,6 +42,7 @@ export function useGameComposition(
   const [board, setBoard] = useState<BoardState>(editor.board)
   const [issues, setIssues] = useState<readonly SimulationIssue[]>([])
   const [selected, setSelected] = useState<Coord | null>(null)
+  const [zoom, setZoom] = useState(1)
 
   const rendererRef = useRef<CanvasBoardRenderer | null>(null)
   const inputRef = useRef<PointerInputController | null>(null)
@@ -80,6 +81,10 @@ export function useGameComposition(
     canUndo: editor.canUndo,
     canRedo: editor.canRedo,
     canClear: editor.board.placedCells.length > 0,
+    zoom,
+    onZoomIn: () => input.setZoom(input.getZoom() + 0.5),
+    onZoomOut: () => input.setZoom(input.getZoom() - 0.5),
+    onResetView: () => input.setZoom(1),
     onUndo: () => {
       audio.unlock()
       if (editor.undo()) {
@@ -104,7 +109,7 @@ export function useGameComposition(
         setIssues([])
       }
     }
-  }), [editor, renderer, input, audio, board])
+  }), [editor, renderer, input, audio, board, zoom])
 
   // Sync state to renderer
   useEffect(() => {
@@ -179,12 +184,17 @@ export function useGameComposition(
     const unbindCmd = input.onCommand(handleCommand)
     
     const unbindSel = input.onSelectionChange(setSelected)
+    const unbindViewport = input.onViewportChange(viewport => {
+      renderer.setViewport(viewport)
+      setZoom(viewport.zoom)
+    })
     
     return () => {
       unbindCmd()
       unbindSel()
+      unbindViewport()
     }
-  }, [input, editor, activeToolSignal, audio])
+  }, [input, editor, activeToolSignal, audio, renderer])
 
   return services
 }

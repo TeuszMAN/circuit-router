@@ -17,7 +17,7 @@ import type {
   SinkStatus,
 } from '@circuit/core/model'
 import { simulateWithTrace } from '@circuit/core/sim'
-import type { BoardRenderer, RenderFrame } from '../app/contracts'
+import type { BoardRenderer, BoardViewport, RenderFrame } from '../app/contracts'
 import type { BoardLayout } from './geometry'
 import { computeBoardLayout, coordAt } from './geometry'
 import {
@@ -137,6 +137,7 @@ export class CanvasBoardRenderer implements BoardRenderer {
   private gridCols = 0
   private gridRows = 0
   private layout: BoardLayout | null = null
+  private viewport: BoardViewport = { zoom: 1, pan: { x: 0, y: 0 } }
 
   private frame: RenderFrame | null = null
   private lastContentKey: string | null = null
@@ -176,6 +177,8 @@ export class CanvasBoardRenderer implements BoardRenderer {
     this.container = container
     this.canvas = canvas
     this.ctx = ctx
+    const bounds = container.getBoundingClientRect()
+    this.resize(bounds.width, bounds.height, window.devicePixelRatio || 1)
 
     const observerCtor = this.resolveResizeObserver()
     if (observerCtor) {
@@ -184,7 +187,7 @@ export class CanvasBoardRenderer implements BoardRenderer {
         if (!entry) return
         const { width, height } = entry.contentRect
         if (width > 0 && height > 0) {
-          this.resize(width, height, this.dpr)
+          this.resize(width, height, window.devicePixelRatio || 1)
         }
       })
       this.resizeObserver.observe(container)
@@ -270,6 +273,13 @@ export class CanvasBoardRenderer implements BoardRenderer {
   cellAt(xPx: number, yPx: number): Coord | null {
     if (!this.layout) return null
     return coordAt(this.layout, xPx, yPx)
+  }
+
+  /** Desenho e hit-test usam o mesmo layout ampliado, em px CSS. */
+  setViewport(viewport: BoardViewport): void {
+    this.viewport = viewport
+    this.recomputeLayout()
+    this.paintStatic()
   }
 
   // -------------------------------------------------------------------------
@@ -377,13 +387,20 @@ export class CanvasBoardRenderer implements BoardRenderer {
       this.layout = null
       return
     }
-    this.layout = computeBoardLayout(
+    const base = computeBoardLayout(
       this.cssWidth,
       this.cssHeight,
       this.gridCols,
       this.gridRows,
       BOARD_PADDING,
     )
+    const { zoom, pan } = this.viewport
+    this.layout = {
+      ...base,
+      cellSize: base.cellSize * zoom,
+      originX: this.cssWidth / 2 + (base.originX - this.cssWidth / 2) * zoom + pan.x,
+      originY: this.cssHeight / 2 + (base.originY - this.cssHeight / 2) * zoom + pan.y,
+    }
   }
 
   /** Estado final energizado — pintura sob demanda (dirty flag), sem animação. */

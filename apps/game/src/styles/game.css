@@ -51,6 +51,22 @@
 
 .palette__tool:disabled { opacity: 0.4; }
 
+.board-zoom {
+  flex: 0 0 auto;
+  align-self: flex-end;
+  padding: 4px max(4px, var(--safe-right));
+  display: flex;
+  gap: 4px;
+}
+.board-zoom button {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 4px 8px;
+  border-radius: var(--radius-s);
+  background: var(--bg-elev);
+  color: var(--text);
+}
+
 /* Região onde o BoardRenderer (MI-08) monta o canvas. */
 .board-slot {
   flex: 1;

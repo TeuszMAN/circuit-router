@@ -67,6 +67,21 @@ async function gesture(level: LevelSpec, path: readonly Coord[]) {
 function board() { return renderSpy.mock.calls.at(-1)![0].board }
 
 describe('jogabilidade pela composição real (ponteiro → editor → simulação → UI)', () => {
+  it('liga pinch e controles de zoom ao renderizador sem desenhar durante o gesto de dois dedos', async () => {
+    const viewportSpy = vi.spyOn(CanvasBoardRenderer.prototype, 'setViewport')
+    await mount(levels[0]!)
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Aumentar zoom' })) })
+    expect(viewportSpy).toHaveBeenLastCalledWith({ zoom: 1.5, pan: { x: 0, y: 0 } })
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Ajustar tabuleiro' })) })
+    const host = screen.getByTestId('board-slot')
+    await act(async () => {
+      for (const [type, id, x] of [['pointerdown', 1, 200], ['pointerdown', 2, 300], ['pointermove', 2, 400], ['pointerup', 1, 200], ['pointerup', 2, 400]] as const) {
+        fireEvent(host, new PointerEvent(type, { pointerId: id, clientX: x, clientY: 150, pointerType: 'touch', bubbles: true }))
+      }
+    })
+    expect(viewportSpy).toHaveBeenLastCalledWith({ zoom: 2, pan: { x: 50, y: 0 } })
+    expect(board().placedCells).toEqual([])
+  })
   it('fase 1: entra pelo menu, corrige falha, monta em etapas, desfaz/refaz, vence, persiste e avança', async () => {
     const level = levels[0]!
     const { state, storage } = await mount(level, true)

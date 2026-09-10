@@ -17,6 +17,11 @@ export interface RenderFrame {
   readonly selected: Coord | null
 }
 
+export interface BoardViewport {
+  readonly zoom: number
+  readonly pan: { readonly x: number; readonly y: number }
+}
+
 /**
  * Implementada pela camada de renderização Canvas (MI-08). O resto do app
  * consome só esta interface — nunca toca `CanvasRenderingContext2D`

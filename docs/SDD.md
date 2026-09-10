@@ -106,6 +106,8 @@ Arrastos unem os lados dos fios existentes e preservam portas (fixas ou do jogad
 
 **7.4 Gestos (MI-09).** Pointer Events unificados (dedo/caneta/mouse), `touch-action: none`, captura de ponteiro; drag-to-connect com traço contínuo quantizado para células e **correção de diagonais** (arrasto rápido em diagonal vira caminho ortogonal sem buracos); pinch-zoom e pan com clamp; toque na peça selecionada rotaciona. Nenhum handler de `mouseenter`.
 
+A composição encaminha o viewport do controlador para o renderizador, que aplica a mesma transformação ao desenho e ao hit-test. Controles de ampliar/reduzir e **Ajustar** complementam o gesto de dois dedos; Ajustar restaura escala e pan. A montagem inicial mede o host e o DPR mesmo sem `ResizeObserver`.
+
 **7.5 Feedback.** Highlight das células do diagnóstico no tabuleiro, haptics opcional (`navigator.vibrate`, respeitando a config), e textos de erro em PT-BR vindos de `@circuit/content/text` — nenhum texto pedagógico hardcoded na UI.
 
 ---

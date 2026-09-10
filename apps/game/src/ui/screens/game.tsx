@@ -40,6 +40,10 @@ export interface GameServices {
   readonly onUndo?: () => void
   readonly onRedo?: () => void
   readonly onClear?: () => void
+  readonly zoom?: number
+  readonly onZoomIn?: () => void
+  readonly onZoomOut?: () => void
+  readonly onResetView?: () => void
 }
 
 export interface GameScreenProps {
@@ -200,6 +204,13 @@ export function GameScreen({
       <p className="game__instructions">{GAMEPLAY_HELP[activeTool.value]}</p>
 
       <div className="game__stage">
+        {services.onZoomIn ? (
+          <div className="board-zoom" role="group" aria-label="Zoom do tabuleiro">
+            <button type="button" aria-label="Diminuir zoom" disabled={(services.zoom ?? 1) <= 1} onClick={services.onZoomOut}>−</button>
+            <button type="button" aria-label="Ajustar tabuleiro" onClick={services.onResetView}>Ajustar</button>
+            <button type="button" aria-label="Aumentar zoom" disabled={(services.zoom ?? 1) >= 4} onClick={services.onZoomIn}>+</button>
+          </div>
+        ) : null}
         <BoardHost
           renderer={services?.renderer}
           input={services?.input}
