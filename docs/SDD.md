@@ -78,6 +78,8 @@ Implementação real em `packages/core/src/sim/engine.ts` — **é o algoritmo q
 
 **5.2 Três estrelas** (SDD §9.E nomeia cada uma na UI): ★1 **Circuito completo** = resolver; ★2 **Rota limpa** = resolver com ≤ `starThresholds.maxPieces` peças; ★3 **Lógica mínima** = resolver com ≤ `starThresholds.maxGates` portas. Não existe estrela por rapidez — velocidade não é aprendizado.
 
+As duas conquistas de otimização são independentes: `scoreSolution` soma 1 pela vitória e 1 por cada limite cumprido. O modal destaca cada conquista pelo seu próprio critério; cumprir apenas o limite de portas resulta em duas estrelas e não concede **Rota limpa**. A explicação da conquista perdida usa peças ou portas conforme o critério.
+
 **5.3 Persistência do melhor resultado.** Para cada fase guarda-se o melhor alcançado (`LevelProgress { stars, bestPieces?, bestGates?, completedWithHint? }`); refazer melhora o registro sem nunca piorá-lo. Limites de estrela são sempre **derivados do solver** (prova de atingibilidade), nunca estimados no olho.
 
 ---

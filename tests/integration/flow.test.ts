@@ -5,7 +5,7 @@
 
 import { describe, expect, test, beforeEach } from 'vitest'
 import type { LevelSpec, BoardState, PlacedCell } from '@circuit/core/model'
-import { LevelEditor } from '@circuit/core/state'
+import { LevelEditor, scoreSolution } from '@circuit/core/state'
 import { simulate } from '@circuit/core/sim'
 import { SaveStore } from '@circuit/core/persist'
 import type { StorageLike } from '@circuit/core/persist'
@@ -34,13 +34,7 @@ function computeStars(
 ): 0 | 1 | 2 | 3 {
   const result = simulate(level, board)
   if (!result.ok) return 0
-  const pieces = board.placedCells.length
-  const gates = board.placedCells.filter(p => p.cell.kind === 'gate').length
-  // ★1 = resolver; ★2 = resolver com ≤ maxPieces peças; ★3 = resolver com ≤ maxGates portas
-  // Stars are cumulative: 3 requires all conditions to be met simultaneously
-  if (gates <= level.starThresholds.maxGates && pieces <= level.starThresholds.maxPieces) return 3
-  if (pieces <= level.starThresholds.maxPieces) return 2
-  return 1
+  return scoreSolution(level, board).stars
 }
 
 // ---------------------------------------------------------------------------

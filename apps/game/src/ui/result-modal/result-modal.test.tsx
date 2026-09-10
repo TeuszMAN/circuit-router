@@ -24,6 +24,16 @@ afterEach(() => {
 })
 
 describe('ResultModal · vitória', () => {
+  it('rota longa perde somente Rota limpa e explica peças, sem inventar excesso de portas', () => {
+    render(<ResultModal outcome={victory({ stars: 2, usedPieces: 6, pieceLimit: 5,
+      achievements: { cleanRoute: false, minimalLogic: true } })}
+      levelName="Caminhos" hasNext onNext={NOP} onRetry={NOP} onExit={NOP} />)
+    expect(screen.getByText(/Você usou 6 peças; dá para fazer com 5/)).toBeTruthy()
+    expect(screen.queryByText(/Você usou .* portas/)).toBeNull()
+    expect(screen.getByText('Rota limpa').closest('li')?.classList.contains('result-star--earned')).toBe(false)
+    expect(screen.getByText('Lógica mínima').closest('li')?.classList.contains('result-star--earned')).toBe(true)
+    expect(screen.getByRole('button', { name: 'Próxima fase' })).toBeTruthy()
+  })
   it('com 3 estrelas nomeia as três conquistas e não oferece tentar de novo', () => {
     render(
       <ResultModal

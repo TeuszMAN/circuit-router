@@ -20,6 +20,7 @@ import {
   formatSinkMismatch,
   messageForIssue,
   starLostExplanation,
+  routeLostExplanation,
 } from '@circuit/content/text'
 import type { Coord, SimulationIssue, SinkStatus } from '@circuit/core/model'
 import { IconStar } from '../icons'
@@ -29,6 +30,9 @@ export interface VictoryDetails {
   readonly stars: 1 | 2 | 3
   readonly usedGates: number
   readonly gateLimit: number
+  readonly usedPieces?: number
+  readonly pieceLimit?: number
+  readonly achievements?: { readonly cleanRoute: boolean; readonly minimalLogic: boolean }
   /** A fase foi vencida usando a dica de nível 2 (SDD §9.C.2). */
   readonly usedHint?: boolean
   readonly saved?: boolean
@@ -142,7 +146,12 @@ function VictoryModal({
   readonly onExit: () => void
 }) {
   const lost: string[] = []
-  if (details.stars < 3) {
+  const cleanRoute = details.achievements?.cleanRoute ?? details.stars >= 2
+  const minimalLogic = details.achievements?.minimalLogic ?? details.stars >= 3
+  if (!cleanRoute && details.usedPieces !== undefined && details.pieceLimit !== undefined) {
+    lost.push(routeLostExplanation(details.usedPieces, details.pieceLimit))
+  }
+  if (!minimalLogic) {
     lost.push(starLostExplanation(details.usedGates, details.gateLimit))
   }
 
@@ -168,7 +177,7 @@ function VictoryModal({
 
       <ul className="result-stars" style="list-style:none;margin:0;padding:0">
         {STARS.map(star => {
-          const earned = star.tier <= details.stars
+          const earned = star.tier === 1 || (star.tier === 2 ? cleanRoute : minimalLogic)
           return (
             <li
               key={star.tier}

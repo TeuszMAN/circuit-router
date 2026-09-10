@@ -11,7 +11,7 @@
 import { useSignal } from '@preact/signals'
 import { useEffect, useRef } from 'preact/hooks'
 import { simulate } from '@circuit/core/sim'
-import { remainingInventory } from '@circuit/core/state'
+import { remainingInventory, scoreSolution } from '@circuit/core/state'
 import { GAMEPLAY_HELP } from '@circuit/content/text'
 import type { BoardState, LevelSpec, SimulationResult } from '@circuit/core/model'
 import type { AudioBus, BoardRenderer, InputController } from '../../app/contracts'
@@ -61,21 +61,9 @@ function emptyBoard(levelId: string): BoardState {
   return { levelId, placedCells: [] }
 }
 
-function countBoard(board: BoardState): { readonly pieces: number; readonly gates: number } {
-  let gates = 0
-  for (const placed of board.placedCells) {
-    if (placed.cell.kind === 'gate') gates += 1
-  }
-  return { pieces: board.placedCells.length, gates }
-}
-
 /** Estrelas da vitória (SDD §5.2/§9.E): ★2 peças, ★3 portas. */
 export function starsFor(level: LevelSpec, board: BoardState): 1 | 2 | 3 {
-  const { pieces, gates } = countBoard(board)
-  let stars: 1 | 2 | 3 = 1
-  if (pieces <= level.starThresholds.maxPieces) stars = 2
-  if (gates <= level.starThresholds.maxGates) stars = 3
-  return stars
+  return scoreSolution(level, board).stars
 }
 
 /** Host do canvas: monta renderer/entrada por contrato quando fornecidos. */
@@ -162,8 +150,7 @@ export function GameScreen({
       return
     }
 
-    const { pieces, gates } = countBoard(board)
-    const stars = starsFor(level, board)
+    const { pieces, gates, stars, cleanRoute, minimalLogic } = scoreSolution(level, board)
     // Vitória real: guarda o melhor resultado + marca "resolvida com dica".
     state.recordResult(level.id, {
       stars,
@@ -177,6 +164,9 @@ export function GameScreen({
       stars,
       usedGates: gates,
       gateLimit: maxGates,
+      usedPieces: pieces,
+      pieceLimit: level.starThresholds.maxPieces,
+      achievements: { cleanRoute, minimalLogic },
       usedHint: hint.used,
       saved: !state.storageFailed.value,
     }
