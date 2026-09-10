@@ -5,7 +5,7 @@
 import { describe, expect, it } from 'vitest'
 import { LEVEL_SCHEMA_VERSION } from '../model'
 import type { BoardState, Cell, Coord, Direction, GateType, LevelSpec, WireCell } from '../model'
-import { simulate, simulateWithTrace } from './index'
+import { evaluateGate, simulate, simulateWithTrace } from './index'
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -70,6 +70,23 @@ describe('paredes no LevelSpec original', () => {
   })
 })
 
+describe('diagnóstico estrutural de realimentação', () => {
+  it('detecta laço mesmo se outra entrada da porta estiver desconectada', () => {
+    const spec = level(3, 2, [gate(1, 1, 'AND', ['W', 'N'], 'E')])
+    const loop = board([W(2, 1, ['W', 'N']), W(2, 0, ['S', 'W']), W(1, 0, ['E', 'S'])])
+    expect(simulate(spec, loop).issues.some(issue => issue.kind === 'cycle')).toBe(true)
+  })
+
+  it('não acusa como cíclica a porta que apenas recebe a saída de um laço', () => {
+    const spec = level(5, 2, [gate(1, 1, 'NOT', ['W'], 'E'), gate(4, 1, 'NOT', ['W'], 'E')])
+    const loop = board([W(0, 1, ['E', 'N']), W(0, 0, ['S', 'E']), W(1, 0, ['W', 'E']),
+      W(2, 0, ['W', 'S']), W(2, 1, ['W', 'N', 'E']), W(3, 1, ['W', 'E'])])
+    const issue = simulate(spec, loop).issues.find(issue => issue.kind === 'cycle')
+    expect(issue).toBeDefined()
+    expect(issue!.cells).not.toContainEqual({ x: 4, y: 1 })
+  })
+})
+
 /** Monta linha de teste de porta: fonte A e B alimentam entradas W e N; sink na saída E. */
 function gateRig(g: GateType, a: 0 | 1, b: 0 | 1, expected: 0 | 1): LevelSpec {
   return level(3, 2, [
@@ -85,6 +102,12 @@ function gateRig(g: GateType, a: 0 | 1, b: 0 | 1, expected: 0 | 1): LevelSpec {
 // ---------------------------------------------------------------------------
 
 describe('tabelas-verdade (critério MI-03)', () => {
+  it('preserva sinal indefinido e rejeita aridade incompleta na avaliação pública', () => {
+    expect(evaluateGate('NOT', [undefined])).toBeUndefined()
+    expect(evaluateGate('AND', [0, undefined])).toBeUndefined()
+    expect(evaluateGate('OR', [1, undefined])).toBeUndefined()
+    expect(evaluateGate('AND', [1])).toBeUndefined()
+  })
   it('NOT: 0 -> 1 e 1 -> 0', () => {
     const l0 = level(3, 1, [src(0, 0, 0, 'E'), gate(1, 0, 'NOT', ['W'], 'E'), snk(2, 0, 1, 'W')])
     expect(simulate(l0, emptyBoard).ok).toBe(true)

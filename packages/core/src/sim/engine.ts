@@ -24,6 +24,7 @@ import type {
   SimulationResult,
   SinkStatus,
 } from '../model'
+import { GATE_ARITY } from '../model'
 
 // ---------------------------------------------------------------------------
 // Geometria
@@ -300,7 +301,8 @@ function buildGraph(level: LevelSpec, board: BoardState): BuiltGraph {
 // Portas lógicas
 // ---------------------------------------------------------------------------
 
-export function evaluateGate(gate: GateType, inputs: readonly Signal[]): 0 | 1 {
+export function evaluateGate(gate: GateType, inputs: readonly Signal[]): Signal {
+  if (inputs.length !== GATE_ARITY[gate] || inputs.some(value => value === undefined)) return undefined
   switch (gate) {
     case 'NOT':
       return inputs[0] === 0 ? 1 : 0
@@ -528,29 +530,46 @@ export function simulateWithTrace(
     return targets
   }
 
-  // Ciclo combinacional: fecho de portas que só dependem de portas que
-  // tampouco resolveram. Portas com entrada estrutural em falta (bare/
-  // floating/short) caem fora do fecho.
-  const cyclic = new Set(leftover)
-  let changed = true
-  while (changed) {
-    changed = false
-    for (const g of [...cyclic]) {
-      const hasMissing = g.inputs.some(input => input.status === 'missing')
-      const depsAllInside = unresolvedDep(g).every(d => cyclic.has(d))
-      if (hasMissing || !depsAllInside) {
-        cyclic.delete(g)
-        changed = true
+  // Tarjan: apenas SCCs com realimentação são ciclos. Uma entrada ausente
+  // não desfaz um laço existente, e leitores a jusante não pertencem a ele.
+  const indices = new Map<GateState, number>()
+  const lowlinks = new Map<GateState, number>()
+  const stack: GateState[] = []
+  const onStack = new Set<GateState>()
+  const components: GateState[][] = []
+  function visit(g: GateState): void {
+    const index = indices.size
+    indices.set(g, index)
+    lowlinks.set(g, index)
+    stack.push(g)
+    onStack.add(g)
+    for (const dep of unresolvedDep(g)) {
+      if (!indices.has(dep)) {
+        visit(dep)
+        lowlinks.set(g, Math.min(lowlinks.get(g)!, lowlinks.get(dep)!))
+      } else if (onStack.has(dep)) {
+        lowlinks.set(g, Math.min(lowlinks.get(g)!, indices.get(dep)!))
       }
     }
+    if (lowlinks.get(g) !== index) return
+    const component: GateState[] = []
+    let member: GateState
+    do {
+      member = stack.pop()!
+      onStack.delete(member)
+      component.push(member)
+    } while (member !== g)
+    if (component.length > 1 || unresolvedDep(g).includes(g)) components.push(component)
   }
+  for (const g of leftover) if (!indices.has(g)) visit(g)
+  const cyclic = new Set(components.flat())
 
-  if (cyclic.size > 0) {
+  for (const component of components) {
     const cyclicKeys = new Set(
-      [...cyclic].map(g => coordKey(g.coord.x, g.coord.y)),
+      component.map(g => coordKey(g.coord.x, g.coord.y)),
     )
     const cycleCells: Coord[] = []
-    for (const g of cyclic) cycleCells.push(g.coord)
+    for (const g of component) cycleCells.push(g.coord)
     // Fios que formam os laços de realimentação (nets ligando portas cíclicas).
     for (const net of nets) {
       const drivesCycle = net.drivers.some(
