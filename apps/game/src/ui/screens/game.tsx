@@ -13,12 +13,28 @@ import { useEffect, useRef } from 'preact/hooks'
 import { simulate } from '@circuit/core/sim'
 import { remainingInventory, scoreSolution } from '@circuit/core/state'
 import { GAMEPLAY_HELP } from '@circuit/content/text'
-import type { BoardState, LevelSpec, SimulationResult } from '@circuit/core/model'
-import type { AudioBus, BoardRenderer, InputController } from '../../app/contracts'
+import type {
+  BoardState,
+  LevelSpec,
+  SimulationResult,
+} from '@circuit/core/model'
+import type {
+  AudioBus,
+  BoardRenderer,
+  InputController,
+} from '../../app/contracts'
 import type { AppState } from '../state'
 import { requestConcept } from '../concept'
 import { IconButton } from '../chrome'
-import { IconBulb, IconPause, IconPlay, IconQuestion, IconRedo, IconTrash, IconUndo } from '../icons'
+import {
+  IconBulb,
+  IconPause,
+  IconPlay,
+  IconQuestion,
+  IconRedo,
+  IconTrash,
+  IconUndo,
+} from '../icons'
 import { ToolPalette, type Tool } from '../hud/tool-palette'
 import { PauseOverlay } from '../hud/pause-overlay'
 import { ResultModal, type ResultOutcome } from '../result-modal'
@@ -150,7 +166,10 @@ export function GameScreen({
       return
     }
 
-    const { pieces, gates, stars, cleanRoute, minimalLogic } = scoreSolution(level, board)
+    const { pieces, gates, stars, cleanRoute, minimalLogic } = scoreSolution(
+      level,
+      board,
+    )
     // Vitória real: guarda o melhor resultado + marca "resolvida com dica".
     state.recordResult(level.id, {
       stars,
@@ -182,25 +201,67 @@ export function GameScreen({
         <IconButton label="Pausar" onClick={() => (paused.value = true)}>
           <IconPause />
         </IconButton>
-        <h1 className="game__topbar-title">{level.name}</h1>
+        <div className="game__heading">
+          <span className="game__eyebrow">Circuit Router · bancada</span>
+          <h1 className="game__topbar-title">{level.name}</h1>
+        </div>
         <IconButton
           label="Painel de conceito"
-          onClick={() => requestConcept(activeTool.value === 'erase' ? undefined : activeTool.value)}
+          onClick={() =>
+            requestConcept(
+              activeTool.value === 'erase' ? undefined : activeTool.value,
+            )
+          }
         >
           <IconQuestion />
         </IconButton>
       </header>
 
-      <p className="game__instructions">{GAMEPLAY_HELP[activeTool.value]}</p>
+      <p className="game__instructions">
+        <span className="game__instruction-icon" aria-hidden="true">
+          ↳
+        </span>
+        <span>{GAMEPLAY_HELP[activeTool.value]}</span>
+      </p>
 
       <div className="game__stage">
-        {services.onZoomIn ? (
-          <div className="board-zoom" role="group" aria-label="Zoom do tabuleiro">
-            <button type="button" aria-label="Diminuir zoom" disabled={(services.zoom ?? 1) <= 1} onClick={services.onZoomOut}>−</button>
-            <button type="button" aria-label="Ajustar tabuleiro" onClick={services.onResetView}>Ajustar</button>
-            <button type="button" aria-label="Aumentar zoom" disabled={(services.zoom ?? 1) >= 4} onClick={services.onZoomIn}>+</button>
-          </div>
-        ) : null}
+        <div className="board-toolbar">
+          <span className="board-toolbar__label">
+            {level.grid.width} × {level.grid.height}
+            <span> · tabuleiro</span>
+          </span>
+          {services.onZoomIn ? (
+            <div
+              className="board-zoom"
+              role="group"
+              aria-label="Zoom do tabuleiro"
+            >
+              <button
+                type="button"
+                aria-label="Diminuir zoom"
+                disabled={(services.zoom ?? 1) <= 1}
+                onClick={services.onZoomOut}
+              >
+                −
+              </button>
+              <button
+                type="button"
+                aria-label="Ajustar tabuleiro"
+                onClick={services.onResetView}
+              >
+                Ajustar
+              </button>
+              <button
+                type="button"
+                aria-label="Aumentar zoom"
+                disabled={(services.zoom ?? 1) >= 4}
+                onClick={services.onZoomIn}
+              >
+                +
+              </button>
+            </div>
+          ) : null}
+        </div>
         <BoardHost
           renderer={services?.renderer}
           input={services?.input}
@@ -208,7 +269,11 @@ export function GameScreen({
         />
 
         {hint.text !== null ? (
-          <HintBanner label={hint.bannerLabel} text={hint.text} onClose={hint.close} />
+          <HintBanner
+            label={hint.bannerLabel}
+            text={hint.text}
+            onClose={hint.close}
+          />
         ) : null}
 
         {paused.value ? (
@@ -225,7 +290,9 @@ export function GameScreen({
             outcome={outcome.value}
             levelName={level.name}
             hasNext={nextLevelId !== null}
-            onNext={() => (nextLevelId !== null ? onOpenNext(nextLevelId) : onExit())}
+            onNext={() =>
+              nextLevelId !== null ? onOpenNext(nextLevelId) : onExit()
+            }
             onRetry={closeOverlays}
             onExit={onExit}
           />
@@ -233,6 +300,18 @@ export function GameScreen({
       </div>
 
       <footer className="game__hud">
+        <div className="hud-caption">
+          <span>Suas ferramentas</span>
+          <span>Selecione e desenhe</span>
+        </div>
+        <ToolPalette
+          activeTool={activeTool}
+          inventory={level.inventory}
+          remaining={remainingInventory(
+            level,
+            services.getBoard?.() ?? emptyBoard(level.id),
+          )}
+        />
         <div className="hud-actions" role="group" aria-label="Ações da fase">
           <IconButton
             label="Desfazer"
@@ -257,13 +336,17 @@ export function GameScreen({
           </IconButton>
           <IconButton label="Dica" onClick={hint.press}>
             <IconBulb />
+            <span className="hud-action-label">Dica</span>
           </IconButton>
-          <IconButton label="Simular circuito" onClick={runSimulation}>
+          <IconButton
+            label="Simular circuito"
+            className="hud-simulate"
+            onClick={runSimulation}
+          >
             <IconPlay />
+            <span>Simular</span>
           </IconButton>
         </div>
-        <ToolPalette activeTool={activeTool} inventory={level.inventory}
-          remaining={remainingInventory(level, services.getBoard?.() ?? emptyBoard(level.id))} />
       </footer>
     </div>
   )

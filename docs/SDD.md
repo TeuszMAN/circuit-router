@@ -106,6 +106,8 @@ Arrastos unem os lados dos fios existentes e preservam portas (fixas ou do jogad
 
 **7.3 Layout.** Tabuleiro maximizado com HUD em barras seguras (`safe-area-inset-*`); alvos de toque ≥ 44px; usável em 360×640 sem scroll horizontal.
 
+**7.3.1 Identidade visual (11/09/2026).** A interface assume a linguagem de uma bancada de circuitos: superfícies lavanda, tipografia Space Grotesk nos títulos e Inter nos textos, ambas auto-hospedadas. O menu traz um inversor interativo que usa `evaluateGate` e não grava progresso. A seleção organiza a campanha nos seis packs reais, exibe progresso agregado e destaca a primeira fase ainda não concluída, sem bloquear as demais. No jogo, a paleta fica acima das ações e **Simular** tem rótulo visível e prioridade visual. O tabuleiro mantém uma superfície azul escura nos dois temas; fontes preenchidas e destinos em anel se distinguem pela forma, além das cores. Fios mais finos e brilho contido preservam a leitura dos conectores. Preferências de tema e movimento continuam respeitadas.
+
 **7.4 Gestos (MI-09).** Pointer Events unificados (dedo/caneta/mouse), `touch-action: none`, captura de ponteiro; drag-to-connect com traço contínuo quantizado para células e **correção de diagonais** (arrasto rápido em diagonal vira caminho ortogonal sem buracos); pinch-zoom e pan com clamp; toque na peça selecionada rotaciona. Nenhum handler de `mouseenter`.
 
 A composição encaminha o viewport do controlador para o renderizador, que aplica a mesma transformação ao desenho e ao hit-test. Controles de ampliar/reduzir e **Ajustar** complementam o gesto de dois dedos; Ajustar restaura escala e pan. A montagem inicial mede o host e o DPR mesmo sem `ResizeObserver`.

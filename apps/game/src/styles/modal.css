@@ -14,17 +14,19 @@
     calc(var(--safe-bottom) + var(--space-3))
     calc(var(--safe-left) + var(--space-3));
   background: var(--overlay);
+  backdrop-filter: blur(8px);
 }
 
 .result-card {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: 12px;
   width: min(440px, 100%);
   max-height: calc(100dvh - 2 * var(--space-4) - var(--safe-top) - var(--safe-bottom));
   overflow-y: auto;
   padding: var(--space-5);
   background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: var(--radius-l);
   box-shadow: var(--shadow);
   animation: result-pop 0.18s ease-out;
@@ -42,10 +44,10 @@
 }
 
 .result-card__title {
-  font-size: 1.5rem;
+  font-size: 1.7rem;
   font-weight: 800;
   text-align: center;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.045em;
 }
 
 .result-card__subtitle {
@@ -73,7 +75,7 @@
 }
 
 .result-star--earned {
-  background: var(--success-soft);
+  background: var(--bg-elev);
   color: var(--text);
 }
 
@@ -88,7 +90,9 @@
 }
 
 .result-star__tier {
-  font-size: 0.75rem;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+  font-size: 0.6rem;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -99,7 +103,8 @@
 }
 
 .result-star__desc {
-  font-size: 0.85rem;
+  font-size: 0.78rem;
+  color: var(--text-muted);
 }
 
 .result-lost {
@@ -144,6 +149,12 @@
   flex-direction: column;
   gap: var(--space-2);
   margin-top: var(--space-2);
+  position: sticky;
+  bottom: 0;
+  flex-shrink: 0;
+  padding-top: 8px;
+  background: var(--surface);
+  box-shadow: 0 -8px 12px var(--surface);
 }
 
 .result-actions--row {
@@ -152,4 +163,26 @@
 
 .result-actions--row .btn {
   flex: 1;
+}
+
+.result-emblem {
+  width: 56px;
+  height: 56px;
+  display: grid;
+  place-items: center;
+  margin: 0 auto 4px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  color: var(--star);
+  background: var(--accent-soft);
+  transform: rotate(-8deg);
+}
+.result-emblem svg { width: 32px; height: 32px; }
+.diagnostic__cells { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.diagnostic__cell { font: 500 10px var(--font-mono); padding: 5px 8px; background: var(--surface); border-radius: 6px; }
+.result-actions .btn { min-height: 48px; }
+@media (max-height: 700px) {
+  .result-card { padding: 20px; gap: 10px; }
+  .result-emblem { width: 44px; height: 44px; }
+  .result-star { padding: 10px; }
 }

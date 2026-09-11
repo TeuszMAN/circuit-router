@@ -19,6 +19,7 @@ import '../styles/base.css'
 import '../styles/app.css'
 import '../styles/game.css'
 import '../styles/modal.css'
+import '../styles/identity.css'
 
 export interface AppShellProps {
   readonly state: AppState
@@ -66,7 +67,7 @@ function CurrentScreen({ state, campaign }: { readonly state: AppState; readonly
 
   switch (route.name) {
     case 'menu':
-      return <MainMenu state={state} />
+      return <MainMenu state={state} levels={campaign.summaries} />
 
     case 'levels':
       return (

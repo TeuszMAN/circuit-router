@@ -15,6 +15,7 @@ import { LEVEL_SCHEMA_VERSION } from '@circuit/core/model'
 export interface LevelSummary {
   readonly id: string
   readonly name: string
+  readonly pack?: { readonly id: string; readonly name: string; readonly theme: string }
 }
 
 export interface Campaign {

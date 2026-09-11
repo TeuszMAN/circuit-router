@@ -143,16 +143,11 @@ export function paintSource(
   const radius = rect.w * 0.26
   ctx.save()
   ctx.shadowColor = color
-  ctx.shadowBlur = rect.w * 0.35
-  ctx.beginPath()
-  ctx.arc(cx, cy, radius, 0, Math.PI * 2)
-  ctx.fillStyle = theme.chipFill
-  ctx.fill()
-  ctx.strokeStyle = color
-  ctx.lineWidth = Math.max(1.5, rect.w * 0.08)
-  ctx.stroke()
+  ctx.shadowBlur = rect.w * 0.12
+  // Fonte preenchida e destino em anel: funções distintas também pela forma.
+  fillRoundRect(ctx, cx - radius, cy - radius, radius * 2, radius * 2, radius * 0.42, color)
   ctx.restore()
-  text(ctx, String(cell.value), cx, cy, rect.w * 0.34, color)
+  text(ctx, String(cell.value), cx, cy, rect.w * 0.34, theme.background)
 }
 
 export function paintSink(
@@ -172,7 +167,7 @@ export function paintSink(
   ctx.save()
   if (satisfied) {
     ctx.shadowColor = theme.sinkSatisfied
-    ctx.shadowBlur = rect.w * 0.45
+    ctx.shadowBlur = rect.w * 0.16
   }
   ctx.beginPath()
   ctx.arc(cx, cy, radius, 0, Math.PI * 2)
@@ -239,7 +234,7 @@ export function paintWire(
 ): void {
   const cx = rect.x + rect.w / 2
   const cy = rect.y + rect.h / 2
-  const width = Math.max(2, rect.w * 0.28)
+  const width = Math.max(2, rect.w * 0.16)
   ctx.save()
   ctx.globalAlpha = alpha
   ctx.strokeStyle = color
@@ -359,7 +354,7 @@ function paintCell(
         } else {
           // Estado final energizado (corte seco / fim da animação): aceso e
           // levemente brilhante, sem o pulso.
-          paintWire(ctx, rect, cell.sides, theme.wireEnergized, 0.75, rect.w * 0.35)
+          paintWire(ctx, rect, cell.sides, theme.wireEnergized, 1, rect.w * 0.12)
         }
       } else {
         paintWire(ctx, rect, cell.sides, theme.wireIdle, 1, 0)

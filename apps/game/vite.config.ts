@@ -43,8 +43,8 @@ export default defineConfig({
         scope: '/',
         display: 'standalone',
         orientation: 'portrait',
-        background_color: '#f3f6fb',
-        theme_color: '#2563eb',
+        background_color: '#eef0fa',
+        theme_color: '#6250c5',
         categories: ['education', 'games', 'puzzle'],
         icons: [
           { src: 'icons/icon-192.png', sizes: '192x192', type: 'image/png' },

@@ -157,11 +157,12 @@ function VictoryModal({
 
   return (
     <div
-      className="result-card"
+      className="result-card result-card--win"
       role="dialog"
       aria-modal="true"
       aria-labelledby="result-title"
     >
+      <div className="result-emblem" aria-hidden="true"><IconStar earned /></div>
       <h2 id="result-title" className="result-card__title">
         {WIN_TITLE}
       </h2>

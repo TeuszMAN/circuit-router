@@ -60,7 +60,7 @@ export function ToolPalette({ activeTool, onSelect, inventory, remaining }: Tool
           >
             {def.icon}
             <span>{def.label}</span>
-            {count !== undefined ? <span aria-hidden="true">{count === null ? '∞' : count}</span> : null}
+            {count !== undefined ? <span className="palette__count" aria-hidden="true">{count === null ? '∞' : count}</span> : null}
           </button>
         )
       })}
