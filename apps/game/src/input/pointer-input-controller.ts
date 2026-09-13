@@ -14,7 +14,7 @@
  * fora dos limites do elemento.
  */
 
-import type { Coord } from '@circuit/core/model'
+import type { Coord, GateType } from '@circuit/core/model'
 import type { InputCommand, InputController } from '../app/contracts'
 import { coordsEqual, orthogonalBridge } from './path'
 import {
@@ -43,6 +43,8 @@ export interface PointerInputControllerOptions {
   readonly cellAt: (xPx: number, yPx: number) => Coord | null
   /** Diz se a célula tem uma peça rotacionável — usada para decidir tap vs. seleção. */
   readonly hasGateAt?: (coord: Coord) => boolean
+  /** Consulta a ferramenta no momento do toque, inclusive após trocar a paleta. */
+  readonly getTool?: () => 'wire' | 'erase' | GateType
   readonly minZoom?: number
   readonly maxZoom?: number
   /** Injeção para testes; por padrão usa `navigator.vibrate` quando disponível. */
@@ -202,7 +204,16 @@ export class PointerInputController implements InputController {
     this.activePointers.delete(event.pointerId)
     if (this.activePointers.size < 2) this.resetPinch()
 
-    if (this.drawPointerId === event.pointerId) this.finishDraw()
+    if (this.drawPointerId === event.pointerId) {
+      const local = this.localPoint(event)
+      if (!this.isInsideElement(local)) {
+        this.endDrawAtBoundary()
+        return
+      }
+      const coord = this.opts.cellAt(local.x, local.y)
+      if (coord) this.appendCoord(coord)
+      this.finishDraw()
+    }
   }
 
   private readonly handlePointerCancel = (event: PointerEvent): void => {
@@ -261,6 +272,22 @@ export class PointerInputController implements InputController {
   }
 
   private handleTap(coord: Coord): void {
+    const tool = this.opts.getTool?.()
+    if (tool === 'erase') {
+      this.setSelected(coord)
+      this.emitCommand({ type: 'erase', coord })
+      return
+    }
+    if (tool && tool !== 'wire') {
+      const repeated = this.selected !== null && coordsEqual(this.selected, coord)
+      this.setSelected(coord)
+      if (repeated && this.opts.hasGateAt?.(coord)) {
+        this.emitCommand({ type: 'rotate', coord })
+      } else {
+        this.emitCommand({ type: 'place-gate', coord, gate: tool })
+      }
+      return
+    }
     if (this.selected && coordsEqual(this.selected, coord)) {
       if (this.opts.hasGateAt?.(coord)) {
         this.emitCommand({ type: 'rotate', coord })

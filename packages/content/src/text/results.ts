@@ -49,6 +49,10 @@ export function starLostExplanation(usedPortas: number, limitPortas: number): st
   return `Você usou ${usedPortas} portas; dá para fazer com ${limitPortas}. Existe uma simplificação escondida aqui.`
 }
 
+export function routeLostExplanation(usedPieces: number, limitPieces: number): string {
+  return `Você usou ${usedPieces} peças; dá para fazer com ${limitPieces}. Tente encurtar a rota.`
+}
+
 /** Ação oferecida junto com "Próxima fase" quando faltou estrela. */
 export const TRY_AGAIN_LABEL = 'Tentar de novo'
 export const NEXT_LEVEL_LABEL = 'Próxima fase'

@@ -40,7 +40,7 @@
 - `SinkCell`: espera valor `expected` pelo `inputSide`.
 - `WireCell`: transporta sinal; `sides` = lados ativos (fio reto, curva, junção em T/+).
 - `GateCell`: porta com `inputSides` **declarados explicitamente** + `outputSide`, ambos já refletindo a rotação.
-- `EmptyCell`: célula vazia editável (vira fio/porta) — nunca entra na simulação.
+- `EmptyCell`: quando declarada em `fixedCells`, é uma parede visível e não editável. Permanece na ocupação para impedir sobreposição, mas não possui terminais e é ignorada na construção do grafo elétrico. Espaços editáveis são coordenadas sem célula fixa.
 
 **3.3 Portas.** `GateType = 'AND' | 'OR' | 'NOT'` no v1 (XOR é *construído* com AND/OR/NOT — é conteúdo do Pack 6, não peça). `GATE_ARITY` valida `inputSides` por tipo: NOT tem 1 entrada (oposta à saída); AND/OR têm 2 (a oposta e a vizinha no sentido horário) — regra `inputSidesFor(gate, outputSide)` do core, que autores de fase podem sobrescrever declarando `inputSides` no `LevelSpec`. Rotação é horária (N→E→S→W) via `rotateCw`.
 
@@ -78,6 +78,8 @@ Implementação real em `packages/core/src/sim/engine.ts` — **é o algoritmo q
 
 **5.2 Três estrelas** (SDD §9.E nomeia cada uma na UI): ★1 **Circuito completo** = resolver; ★2 **Rota limpa** = resolver com ≤ `starThresholds.maxPieces` peças; ★3 **Lógica mínima** = resolver com ≤ `starThresholds.maxGates` portas. Não existe estrela por rapidez — velocidade não é aprendizado.
 
+As duas conquistas de otimização são independentes: `scoreSolution` soma 1 pela vitória e 1 por cada limite cumprido. O modal destaca cada conquista pelo seu próprio critério; cumprir apenas o limite de portas resulta em duas estrelas e não concede **Rota limpa**. A explicação da conquista perdida usa peças ou portas conforme o critério.
+
 **5.3 Persistência do melhor resultado.** Para cada fase guarda-se o melhor alcançado (`LevelProgress { stars, bestPieces?, bestGates?, completedWithHint? }`); refazer melhora o registro sem nunca piorá-lo. Limites de estrela são sempre **derivados do solver** (prova de atingibilidade), nunca estimados no olho.
 
 ---
@@ -88,7 +90,11 @@ Implementação real em `packages/core/src/sim/engine.ts` — **é o algoritmo q
 
 **6.2 Undo/redo.** Pilhas de estados com limite configurável. **Um traço inteiro de arrasto é coalescido em UM único passo de undo** (`dragWires(path)`), mesmo com dezenas de células — o jogador desfaz o gesto, não a célula. Nova edição limpa a pilha de redo.
 
+Arrastos unem os lados dos fios existentes e preservam portas (fixas ou do jogador). Assim uma rota pode ser construída em vários gestos e ramificada em T/+; repassar uma conexão idêntica não cria histórico. A posição do `pointerup` também integra o caminho. Trocar para borracha e tocar apaga a peça mesmo que ela já estivesse selecionada; seleção sozinha não coloca nem substitui portas.
+
 **6.3 Invariante.** Nenhum comando sobrescreve célula fixa do nível (`isFixed`); comando sobre célula fixa é rejeitado sem alterar estado. Property test: 200 comandos aleatórios + 200 undos voltam ao estado inicial.
+
+**6.4 Inventário.** Transições validam o estoque sobre o estado final (apenas peças do jogador). Tipo de porta omitido equivale a zero; `null` é ilimitado. Arrasto que excede o estoque é rejeitado inteiro, preservando undo/redo. Apagar, substituir ou desfazer devolve as peças correspondentes. A paleta mostra quantidades restantes e desabilita portas não permitidas; fio continua selecionável para unir trechos já existentes mesmo sem estoque novo.
 
 ---
 
@@ -100,7 +106,11 @@ Implementação real em `packages/core/src/sim/engine.ts` — **é o algoritmo q
 
 **7.3 Layout.** Tabuleiro maximizado com HUD em barras seguras (`safe-area-inset-*`); alvos de toque ≥ 44px; usável em 360×640 sem scroll horizontal.
 
+**7.3.1 Identidade visual (11/09/2026).** A interface assume a linguagem de uma bancada de circuitos: superfícies lavanda, tipografia Space Grotesk nos títulos e Inter nos textos, ambas auto-hospedadas. O menu traz um inversor interativo que usa `evaluateGate` e não grava progresso. A seleção organiza a campanha nos seis packs reais, exibe progresso agregado e destaca a primeira fase ainda não concluída, sem bloquear as demais. No jogo, a paleta fica acima das ações e **Simular** tem rótulo visível e prioridade visual. O tabuleiro mantém uma superfície azul escura nos dois temas; fontes preenchidas e destinos em anel se distinguem pela forma, além das cores. Fios mais finos e brilho contido preservam a leitura dos conectores. Preferências de tema e movimento continuam respeitadas.
+
 **7.4 Gestos (MI-09).** Pointer Events unificados (dedo/caneta/mouse), `touch-action: none`, captura de ponteiro; drag-to-connect com traço contínuo quantizado para células e **correção de diagonais** (arrasto rápido em diagonal vira caminho ortogonal sem buracos); pinch-zoom e pan com clamp; toque na peça selecionada rotaciona. Nenhum handler de `mouseenter`.
+
+A composição encaminha o viewport do controlador para o renderizador, que aplica a mesma transformação ao desenho e ao hit-test. Controles de ampliar/reduzir e **Ajustar** complementam o gesto de dois dedos; Ajustar restaura escala e pan. A montagem inicial mede o host e o DPR mesmo sem `ResizeObserver`.
 
 **7.5 Feedback.** Highlight das células do diagnóstico no tabuleiro, haptics opcional (`navigator.vibrate`, respeitando a config), e textos de erro em PT-BR vindos de `@circuit/content/text` — nenhum texto pedagógico hardcoded na UI.
 
@@ -147,6 +157,8 @@ Determinismo: toda a cadeia é dirigida por PRNG semeado (`Rng` + `mixSeed`) —
 
 **10.4 Extensibilidade.** O storage fica atrás de interface (`StorageLike`) — sync remoto futuro é um adaptador novo, não uma reescrita (ADR-0001).
 
+**10.5 Storage indisponível.** Falhas de acesso/gravação não impedem iniciar, editar ou vencer. O progresso permanece em memória, `persistenceFailed` sinaliza a falha e o modal informa que ele dura apenas a sessão. A próxima gravação tenta persistir novamente todo o estado acumulado.
+
 ---
 
 **11. Áudio**
@@ -154,6 +166,8 @@ Determinismo: toda a cadeia é dirigida por PRNG semeado (`Rng` + `mixSeed`) —
 **11.1 WebAudio com desbloqueio por gesto.** `WebAudioBus implements AudioBus` (`apps/game/src/audio/`): o `AudioContext` **só é criado no primeiro `unlock()`**, chamado a partir de um gesto do usuário — zero warning de autoplay, nada toca antes de interação.
 
 **11.2 SFX sintetizados.** place/erase/rotate/success/error gerados por oscilador+envelope (sem arquivos pesados).
+
+Se a criação do `AudioContext` for recusada ou a API estiver ausente, `unlock()` retorna silenciosamente e o gesto de edição continua.
 
 **11.3 Música ambiente.** Pad de acordes com scheduler; `setMusicEnabled` liga/desliga; fade no bus próprio.
 

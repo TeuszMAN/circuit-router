@@ -167,6 +167,10 @@ export class SaveStore {
   private _data: SaveData
   /** Guardado quando o storage estava corrompido e foi descartado. */
   private _recoveredFromCorruption = false
+  private _persistenceFailed = false
+
+  /** O estado continua disponível nesta sessão mesmo se o storage recusar gravação. */
+  get persistenceFailed(): boolean { return this._persistenceFailed }
 
   constructor(
     private readonly storage: StorageLike,
@@ -181,6 +185,7 @@ export class SaveStore {
     try {
       raw = this.storage.getItem(this.key)
     } catch {
+      this._persistenceFailed = true
       raw = null
     }
     if (raw === null) return emptySave()
@@ -213,7 +218,12 @@ export class SaveStore {
   }
 
   private persist(): void {
-    this.storage.setItem(this.key, JSON.stringify(this._data))
+    try {
+      this.storage.setItem(this.key, JSON.stringify(this._data))
+      this._persistenceFailed = false
+    } catch {
+      this._persistenceFailed = true
+    }
   }
 
   get data(): SaveData {
@@ -290,7 +300,12 @@ export class SaveStore {
 
   /** Apaga todo o save (volta ao padrão). */
   reset(): void {
-    this.storage.removeItem(this.key)
+    try {
+      this.storage.removeItem(this.key)
+      this._persistenceFailed = false
+    } catch {
+      this._persistenceFailed = true
+    }
     this._data = emptySave()
     this._recoveredFromCorruption = false
   }

@@ -4,7 +4,7 @@
  * (a extra só desbloqueia após uma simulação que falhou — SDD §9.C.2).
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { cleanup, fireEvent, render, screen } from '@testing-library/preact'
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/preact'
 import { GameScreen } from './game'
 import { createAppState } from '../state'
 import { BOOTSTRAP_CAMPAIGN } from '../campaign'
@@ -77,7 +77,7 @@ describe('GameScreen · HUD', () => {
 
   it('seleciona a ferramenta ativa na paleta', () => {
     renderGame()
-    const and = screen.getByRole('button', { name: 'Ferramenta AND' }) as HTMLButtonElement
+    const and = screen.getByRole('button', { name: 'Ferramenta Borracha' }) as HTMLButtonElement
     const wire = screen.getByRole('button', { name: 'Ferramenta Fio' }) as HTMLButtonElement
     expect(wire.getAttribute('aria-pressed')).toBe('true')
     expect(and.getAttribute('aria-pressed')).toBe('false')
@@ -125,7 +125,7 @@ describe('GameScreen · simulação e dica', () => {
     // Primeira dica: nível 1 (empurrão conceitual).
     fireEvent.click(screen.getByRole('button', { name: 'Dica' }))
     expect(screen.getByText(LEVEL.hints[0]!)).toBeTruthy()
-    expect(screen.getByText('Dica')).toBeTruthy()
+    expect(within(screen.getByTestId('hint-banner')).getByText('Dica')).toBeTruthy()
 
     // Fechar volta a esconder.
     fireEvent.click(screen.getByRole('button', { name: 'Fechar dica' }))

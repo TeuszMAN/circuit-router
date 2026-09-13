@@ -68,5 +68,6 @@ const ARITY_2_COMBOS: readonly (readonly (0 | 1)[])[] = [
 /** Todas as combinações de entrada da porta, avaliadas pelo core (SDD §4.4). */
 export function truthTable(gate: GateType): readonly TruthRow[] {
   const combos = GATE_ARITY[gate] === 1 ? ARITY_1_COMBOS : ARITY_2_COMBOS
-  return combos.map(inputs => ({ inputs, output: evaluateGate(gate, inputs) }))
+  // As combinações acima têm aridade completa e apenas bits definidos.
+  return combos.map(inputs => ({ inputs, output: evaluateGate(gate, inputs)! }))
 }

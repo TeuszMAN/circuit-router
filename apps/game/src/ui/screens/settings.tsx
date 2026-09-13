@@ -76,7 +76,7 @@ export function SettingsScreen({ state, onBack }: SettingsProps) {
             <span className="setting-row__text">
               <span className="setting-row__label">Tema</span>
               <br />
-              <span className="setting-row__hint">Aparência das telas e do tabuleiro</span>
+              <span className="setting-row__hint">Aparência das telas e dos controles</span>
             </span>
           </div>
           <div className="setting-row">
@@ -97,7 +97,7 @@ export function SettingsScreen({ state, onBack }: SettingsProps) {
           </div>
           <SwitchRow
             label="Reduzir animação"
-            hint="Desliga efeitos de movimento (SDD §8.5)"
+            hint="Suaviza a experiência, sem efeitos de movimento"
             checked={state.reducedMotion.value}
             onChange={next => state.setSettings({ reducedMotion: next })}
           />

@@ -3,7 +3,7 @@
  * todo desenho consulta `BoardTheme`. O shell (MI-10) poderá trocar o tema
  * passando outro `Partial<BoardTheme>` ao construtor do renderizador.
  *
- * Paleta-base escura herdada do protótipo (sinal 1 ciano, sinal 0 rosa).
+ * Bancada azul escura (sinal 1 ciano, sinal 0 coral).
  */
 
 export interface SignalColors {
@@ -53,18 +53,18 @@ export interface BoardTheme {
 }
 
 export const darkTheme: BoardTheme = {
-  background: '#0b0f19',
-  boardFrame: 'rgba(255, 255, 255, 0.10)',
-  gridLine: 'rgba(255, 255, 255, 0.06)',
-  wireIdle: '#3a4252',
-  wireEnergized: '#2dd4bf',
-  chipFill: '#161d2e',
-  chipStroke: '#3b465e',
-  text: '#e2e8f0',
+  background: '#222b45',
+  boardFrame: '#45516d',
+  gridLine: '#35415e',
+  wireIdle: '#8997b5',
+  wireEnergized: '#58e0d0',
+  chipFill: '#303c59',
+  chipStroke: '#96a5c4',
+  text: '#edf2ff',
   gateOutput: '#94a3b8',
-  sinkRing: '#64748b',
-  sinkSatisfied: '#22c55e',
-  selected: '#00e5ff',
+  sinkRing: '#a3b0cd',
+  sinkSatisfied: '#83e3b6',
+  selected: '#c6baff',
   issue: {
     short: '#ff3b5c',
     cycle: '#ff9f1c',
@@ -72,9 +72,9 @@ export const darkTheme: BoardTheme = {
     unpowered: '#f4a259',
   },
   signal: {
-    high: '#00e5ff',
-    low: '#ff3366',
-    pulse: '#67e8f9',
+    high: '#58e0d0',
+    low: '#ffa394',
+    pulse: '#a3f2e8',
   },
 }
 

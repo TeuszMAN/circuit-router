@@ -138,6 +138,12 @@ afterEach(() => {
 })
 
 describe('WebAudioBus · antes da interação', () => {
+  it('permite continuar sem áudio quando a criação do contexto falha', () => {
+    const bus = new WebAudioBus({ contextFactory: () => { throw new Error('Áudio indisponível') } })
+    expect(() => bus.unlock()).not.toThrow()
+    expect(() => bus.play('place')).not.toThrow()
+    bus.dispose()
+  })
   it('não cria AudioContext nem toca nada antes do unlock (sem warning de autoplay)', () => {
     const { ctx, factory, bus } = createHarness()
     bus.play('place')

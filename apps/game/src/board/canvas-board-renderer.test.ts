@@ -50,6 +50,28 @@ describe('CanvasBoardRenderer — ciclo de vida e DPR', () => {
     expect(canvas.tagName).toBe('CANVAS')
   })
 
+  it('inicializa tamanho e DPR sem depender do primeiro ResizeObserver', () => {
+    vi.spyOn(container, 'getBoundingClientRect').mockReturnValue({ width: 300, height: 100 } as DOMRect)
+    const renderer = mountRenderer({ ResizeObserver: null })
+    renderer.render(makeFrame())
+    expect(renderer.cellAt(150, 50)).toEqual({ x: 1, y: 0 })
+    expect((container.firstElementChild as HTMLCanvasElement).width).toBe(300 * window.devicePixelRatio)
+    renderer.unmount()
+  })
+
+  it('zoom e pan deslocam juntos a pintura e a célula tocada', () => {
+    const renderer = mountRenderer({ matchMedia: makeMatchMedia(true) })
+    renderer.resize(300, 100, 2)
+    renderer.render(makeFrame())
+    renderer.setViewport({ zoom: 2, pan: { x: 80, y: 0 } })
+    expect(renderer.cellAt(80, 50)).toEqual({ x: 0, y: 0 })
+    expect(renderer.cellAt(230, 50)).toEqual({ x: 1, y: 0 })
+    expect(ctx.calls.fillText).toContainEqual(['1', 30, 50])
+    renderer.setViewport({ zoom: 1, pan: { x: 0, y: 0 } })
+    expect(renderer.cellAt(80, 50)).toEqual({ x: 0, y: 0 })
+    renderer.unmount()
+  })
+
   it('desmonta removendo o canvas do DOM', () => {
     const renderer = mountRenderer()
     renderer.unmount()

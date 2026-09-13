@@ -6,6 +6,14 @@
  * tocar no index.html nem no entry da app.
  */
 @font-face {
+  font-family: 'Space Grotesk';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 300 700;
+  src: url('/fonts/space-grotesk-latin-wght-normal.woff2') format('woff2');
+}
+
+@font-face {
   font-family: 'Inter Variable';
   font-style: normal;
   font-display: swap;

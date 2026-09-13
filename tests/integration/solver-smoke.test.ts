@@ -69,6 +69,9 @@ describe('fumaça do solver sobre todas as 24 fases da campanha', () => {
   })
 
   for (const level of ALL_LEVELS) {
+    test(`${level.id}: tabuleiro inicial simula sem remover paredes`, () => {
+      expect(() => simulate(level, { levelId: level.id, placedCells: [] })).not.toThrow()
+    })
     if (HAND_VALIDATED_IDS.has(level.id)) {
       test(`${level.id} (${level.name}): hand-validated — simulate com solução explícita ok`, () => {
         const placedCells = HAND_VALIDATED_SOLUTIONS[level.id]
@@ -79,13 +82,7 @@ describe('fumaça do solver sobre todas as 24 fases da campanha', () => {
           placedCells: placedCells as PlacedCell[],
         }
 
-        // Filtra células 'empty' (paredes) para a simulação elétrica
-        const electricSpec: LevelSpec = {
-          ...level,
-          fixedCells: level.fixedCells.filter(f => f.cell.kind !== 'empty'),
-        }
-
-        const result = simulate(electricSpec, board)
+        const result = simulate(level, board)
         expect(result.ok).toBe(true)
         expect(result.sinks.every(s => s.satisfied)).toBe(true)
         expect(result.issues).toHaveLength(0)
@@ -104,12 +101,7 @@ describe('fumaça do solver sobre todas as 24 fases da campanha', () => {
 
         // Confirma a solução simulando (solver já valida internamente, mas
         // isso garante integração de ponta a ponta).
-        // Filtra células 'empty' (paredes) — a simulação elétrica não as processa.
-        const electricSpec: LevelSpec = {
-          ...level,
-          fixedCells: level.fixedCells.filter(f => f.cell.kind !== 'empty'),
-        }
-        const simResult = simulate(electricSpec, result.board!)
+        const simResult = simulate(level, result.board!)
         expect(simResult.ok).toBe(true)
         expect(simResult.sinks.every(s => s.satisfied)).toBe(true)
       })
